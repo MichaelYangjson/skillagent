@@ -1,0 +1,63 @@
+﻿序号,区域/位置,英文,中文
+1,浏览器标题,BeePOP — AI Product Studio,
+2,顶栏 Logo,BeePOP,
+3,顶栏文件名（示例）,Stanley Quencher,
+4,顶栏徽章,Private,私有
+5,画布侧钮 title（左）,Reset all boxes,重置选框
+6,画布侧钮 title（右）,Preview,预览
+7,状态① 卡片遮罩,Processing（含省略号动画）,处理中
+8,状态④ 卡片角标,Subject confirmed,主体已确认
+9,底栏选框模式,Subject,主体
+10,底栏选框模式,Accessory,配件
+11,底栏标签,Optional,可选
+12,底栏尺寸,Box size,选框大小
+13,右栏标题,Untitled,未命名
+14,右栏区块标题,Original Images,原始图片
+15,右栏 AI 徽章,AI Processing,AI 处理
+16,状态① 引导,Image received! Let's get it ready for the spotlight.,已收到图片，准备上架展示
+17,状态① 步骤（进行中）,Removing watermarks…,去水印…
+18,状态① 步骤（进行中）,Removing background…,去背景…
+19,状态① 步骤（进行中）,Enhancing quality…,增强画质…
+20,状态① 步骤（进行中）,Identifying subject…,识别主体…
+21,状态① 步骤对照（静态说明）,,步骤对照：去水印 → 去背景 → 增强画质 → 识别主体
+22,状态① 步骤（完成）,Watermark removed,水印已去除
+23,状态① 步骤（完成）,Background removed,背景已去除
+24,状态① 步骤（完成）,Quality enhanced,画质已增强
+25,状态① 步骤（完成）,Subject identified,主体已识别
+26,状态② 成功行,Product ready,商品就绪
+27,状态② 次要说明,Continuing to generation…,继续进入生成
+28,状态③ 警告标题,AI couldn’t clearly detect the subject,
+29,状态③ 警告正文,Click to place a subject box (one subject only). You can add multiple accessories.,中文：AI 无法清晰识别主体；单击放置主体选框（仅单主体），配件可多个。
+30,状态③ 主体徽章（无选框）,No subject selected,主体未选择
+31,状态③ 主体徽章（有选框）,Subject selected,主体已选择
+32,状态③ 配件徽章（无）,Accessories,配件
+33,状态③ 配件徽章（有）,N accessory / N accessories（N 为数量）,配件 N 个
+34,状态③ 小标签,Optional,可选
+35,状态③ 添加按钮,+ Add,添加
+36,状态③ 主按钮,Use this subject,使用此主体
+37,状态③ 快捷键说明,Click to place · drag to move/resize · Del to delete,单击放置 · 拖拽移动/缩放 · Del 删除
+38,状态④ 成功行,Subject confirmed,主体已确认
+39,状态④ 次要说明,Moving to generation…,进入生成
+40,Advanced 区块标题,Primary,主商品
+41,Advanced 区块标题,Accessories,配件
+42,Advanced 添加按钮,+,加号
+43,底部 briefing 正文,"Product: Stanley Quencher H2.0 FlowState™ Tumbler. Audience: Eco-conscious commuters, fitness enthusiasts, and trendy professionals. Benefit: Superior thermal retention and effortless portability for daily hydration. Material: Recycled 18/8 stainless steel with a matte powder-coat finish.",原型说明：示例商品 briefing（英文稿）；上线可复制为任意产品描述。
+44,自动处理悬停提示,Auto-Process,自动处理
+45,工作流模式下拉选项,Auto,自动（下拉旁另有「自动 / 高级」标注）
+46,工作流模式下拉选项,Advanced,高级（下拉旁另有「自动 / 高级」标注）
+47,工作流 select title,Workflow mode,工作流模式
+48,工作流下拉旁可见标注,,自动 / 高级
+49,开关 aria-label,Toggle Auto-Process,
+50,演示条标签,Simulate,模拟流程
+51,演示条按钮,▶ AI success,识别成功
+52,演示条按钮,▶ AI failed,识别失败
+53,演示条标签,Jump,直跳
+54,演示条按钮,① Processing,处理中
+55,演示条按钮,② Detected,识别成功
+56,演示条按钮,③ Manual box,手动框选
+57,演示条按钮,④ Confirmed,确认成功
+58,状态③ 画布顶提示（脚本）,↖ Click to place a box · Subject: one only · Accessories: multiple,单击放置选框 · 主体仅限单个 · 配件可多个
+59,画布选框标签（脚本）,Subject,主体
+60,画布选框标签（脚本）,Accessory 1 / Accessory 2 / …,配件1 / 配件2 / …
+61,侧栏列表主名（脚本）,同画布英文标签,列表内灰字：主体或 配件+序号
+62,选框删除按钮,×,

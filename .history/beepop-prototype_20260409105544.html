@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeePOP — AI Product Studio</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', sans-serif;
+  height: 100vh; overflow: hidden;
+  display: flex; flex-direction: column;
+  background: #f0f0f0; color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prototype: English UI + CN gloss for stakeholders */
+.proto-anno {
+  font-size: 9px;
+  font-weight: 400;
+  color: #94a3b8;
+  line-height: 1.25;
+}
+.proto-anno--inline { margin-left: 4px; white-space: nowrap; }
+.proto-anno--block { display: block; margin-top: 4px; }
+.bt-tool.active .proto-anno { color: rgba(255,255,255,.58); }
+.bt-tool:not(.active) .proto-anno { color: #b4b4b4; }
+.canvas-hint .hint-main { display: block; font-size: 12px; color: #444; font-weight: 500; }
+.canvas-hint .proto-anno--block { margin-top: 5px; font-size: 10px; color: #94a3b8; font-weight: 400; }
+.proc-label .proto-anno--block { margin-top: 5px; font-size: 10px; color: #4a6080; font-weight: 400; }
+.badge .proto-anno--inline { color: #c4c4c4; margin-left: 5px; }
+.rp-lbl-wrap { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 6px; margin-bottom: 10px; }
+.rp-lbl-wrap .rp-lbl { margin-bottom: 0; }
+.ai-badge { flex-wrap: wrap; }
+.bbox-count-badge .proto-anno--inline { color: inherit; opacity: .72; font-size: 10px; }
+
+/* ═══ HEADER ═══ */
+.header {
+  height: 44px; background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex; align-items: center; padding: 0 14px; gap: 10px;
+  flex-shrink: 0; z-index: 100;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+}
+.logo-wrap { display: flex; align-items: center; gap: 7px; user-select: none; }
+.logo-icon { width: 22px; height: 22px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.logo-text { font-size: 14px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.3px; }
+.h-sep { width: 1px; height: 16px; background: #e0e0e0; margin: 0 2px; }
+.file-name { font-size: 13px; color: #999; cursor: pointer; transition: color .15s; }
+.file-name:hover { color: #555; }
+.badge { border: 1px solid #e5e5e5; color: #aaa; font-size: 11px; padding: 2px 8px; border-radius: 5px; background: #fafafa; }
+.h-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.hbtn { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #bbb; cursor: pointer; transition: background .15s, color .15s; }
+.hbtn:hover { background: #f4f4f4; color: #666; }
+
+/* ═══ BODY ═══ */
+.body { flex: 1; display: flex; overflow: hidden; }
+
+/* ═══ TOOLBAR ═══ */
+.toolbar {
+  width: 44px; background: #fafafa;
+  border-right: 1px solid #ebebeb;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 0; gap: 3px; flex-shrink: 0; z-index: 10;
+}
+.tbtn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; color: #c0c0c0; transition: background .15s, color .15s; }
+.tbtn:hover { background: #eee; color: #666; }
+.tbtn.active { background: #1a1a1a; color: #fff; }
+.tb-spacer { flex: 1; }
+
+/* ═══ CANVAS ═══ */
+.canvas {
+  flex: 1; position: relative;
+  background-color: #ffffff;
+  background-image: radial-gradient(circle, #d4d4d4 1px, transparent 1px);
+  background-size: 24px 24px;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Canvas hint */
+.canvas-hint {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,0.94); border: 1px solid #e5e5e5;
+  border-radius: 20px; padding: 5px 16px; font-size: 12px; color: #666;
+  z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  pointer-events: none; opacity: 0; transition: opacity .25s;
+  white-space: normal; max-width: min(520px, 92vw); text-align: center; line-height: 1.35;
+}
+.canvas-hint.show { opacity: 1; }
+
+/* Cards */
+.cards-wrap { display: flex; gap: 20px; align-items: center; position: relative; z-index: 2; }
+.pcard {
+  width: 210px; height: 210px; border-radius: 14px; overflow: hidden; position: relative;
+  background: #fff; flex-shrink: 0;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
+  display: flex; align-items: center; justify-content: center;
+  transition: box-shadow .2s;
+}
+.pcard:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.06); }
+.pcard.bbox-target { box-shadow: 0 0 0 2.5px #3b82f6, 0 4px 24px rgba(59,130,246,0.2); }
+
+/* Processing overlay */
+.proc-overlay {
+  position: absolute; inset: 0; background: rgba(196,214,232,0.62);
+  backdrop-filter: blur(5px); border-radius: 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+.proc-label {
+  font-size: 13px; font-weight: 500; color: #2a4060;
+  background: rgba(255,255,255,0.88); padding: 6px 16px;
+  border-radius: 20px; border: 1px solid rgba(255,255,255,0.9);
+}
+.proc-bar-wrap { width: 80px; height: 3px; background: rgba(255,255,255,0.5); border-radius: 2px; overflow: hidden; }
+.proc-bar { height: 100%; background: #5090d0; border-radius: 2px; width: 0%; transition: width .4s ease; }
+
+/* BBox SVG layer */
+#bboxLayer {
+  position: absolute; inset: 0; z-index: 10;
+  width: 100%; height: 100%;
+  cursor: crosshair; display: none;
+  user-select: none;
+  pointer-events: all;
+}
+#bboxLayer.active { display: block; }
+
+/* ═══ CANVAS SIDE BUTTONS (state 3) ═══ */
+.canvas-side-btn {
+  position: absolute; z-index: 15;
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 50%;
+  display: none;
+  align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+  cursor: pointer; backdrop-filter: blur(8px);
+  transition: background .15s, transform .15s;
+  top: 50%; transform: translateY(-50%);
+  color: #666;
+}
+.canvas-side-btn:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
+.canvas-side-btn.show { display: flex; }
+#csLeft { left: 18px; }
+#csRight { right: 18px; }
+
+/* ═══ BOTTOM BBOX TOOLBAR ═══ */
+#bboxToolbar {
+  position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%);
+  display: none; align-items: stretch; gap: 8px; z-index: 30;
+}
+#bboxToolbar.show { display: flex; }
+
+.bt-card {
+  background: rgba(255,255,255,0.97);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+  display: flex; align-items: center; gap: 2px;
+  padding: 8px 10px;
+  backdrop-filter: blur(10px);
+}
+.bt-tool {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 5px 8px; border-radius: 10px; cursor: pointer;
+  color: #aaa; font-size: 10.5px; transition: all .15s; min-width: 42px;
+}
+.bt-tool.active { background: #1a1a1a; color: #fff; }
+.bt-tool svg { flex-shrink: 0; }
+.bt-tool-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #3b82f6; margin-top: 1px;
+}
+.bt-sep { width: 1px; height: 28px; background: #f0f0f0; margin: 0 4px; }
+
+/* Size panel */
+.bt-size-wrap {
+  display: flex; align-items: center; gap: 10px; padding: 0 4px;
+}
+.bt-size-label { font-size: 12px; color: #555; white-space: nowrap; font-weight: 500; }
+
+/* Custom range slider */
+.bt-slider {
+  -webkit-appearance: none;
+  width: 110px; height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #3b82f6 var(--pct, 37%), #e0e0e0 var(--pct, 37%));
+  outline: none; cursor: pointer;
+  transition: opacity .15s;
+}
+.bt-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 1px 4px rgba(59,130,246,0.4);
+  cursor: pointer;
+  transition: transform .1s;
+}
+.bt-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.bt-slider:disabled { opacity: 0.4; cursor: not-allowed; }
+.bt-slider:disabled::-webkit-slider-thumb { border-color: #ccc; box-shadow: none; }
+
+.bt-erase {
+  background: #1a1a1a; color: #fff; border: none;
+  border-radius: 10px; padding: 7px 16px;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background .15s, opacity .15s;
+  white-space: nowrap; font-family: inherit;
+}
+.bt-erase:hover:not(:disabled) { background: #333; }
+.bt-erase:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* State visibility */
+.cs { display: none; }
+.cs.active { display: flex; animation: fadeIn .25s ease; }
+.ss { display: none; }
+.ss.active { display: block; animation: fadeIn .2s ease; }
+
+/* ═══ RIGHT PANEL ═══ */
+.rp {
+  width: 296px; background: #fff;
+  border-left: 1px solid #ebebeb;
+  display: flex; flex-direction: column;
+  flex-shrink: 0; z-index: 10; overflow: hidden;
+}
+.rp-scroll {
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+  min-height: 0;
+}
+.rp-scroll::-webkit-scrollbar { width: 4px; }
+.rp-scroll::-webkit-scrollbar-track { background: transparent; }
+.rp-scroll::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 2px; }
+.rp-hdr { padding: 14px 16px; border-bottom: 1px solid #f4f4f4; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.rp-title { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+.rp-close { width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #c0c0c0; cursor: pointer; }
+.rp-close:hover { background: #f5f5f5; color: #777; }
+.rp-sec { padding: 14px 16px; border-bottom: 1px solid #f5f5f5; flex-shrink: 0; }
+.rp-lbl { font-size: 11.5px; color: #c0c0c0; margin-bottom: 10px; }
+
+.orig-thumbs { display: flex; gap: 8px; }
+.orig-thumb { width: 50px; height: 50px; background: #f4f4f4; border-radius: 8px; border: 1px solid #ececec; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; cursor: pointer; transition: border-color .15s; }
+.orig-thumb:hover { border-color: #c0c0c0; }
+.orig-thumb.active { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
+.orig-thumb .thumb-tag {
+  position: absolute; bottom: 2px; left: 2px; right: 2px;
+  font-size: 8px; font-weight: 600; color: #fff; text-align: center;
+  background: rgba(0,0,0,.55); border-radius: 4px; line-height: 1.2; padding: 1px 0;
+  pointer-events: none;
+}
+.orig-thumb { position: relative; }
+
+.ai-badge { display: inline-flex; align-items: center; gap: 6px; background: #f8f8f8; border: 1px solid #ebebeb; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; color: #333; margin-bottom: 12px; user-select: none; }
+.ai-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background .3s; }
+.ai-dot.idle { background: #d0d0d0; }
+.ai-dot.processing { background: #f59e0b; animation: dotPulse 1s ease-in-out infinite; }
+.ai-dot.success { background: #22c55e; }
+.ai-dot.warn { background: #f59e0b; }
+
+.sbody { font-size: 13px; color: #555; line-height: 1.65; }
+.srow { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 5px; }
+.srow > * { flex-shrink: 0; }
+.srow > span { flex: 1; flex-shrink: 1; }
+.green { color: #16a34a; font-weight: 500; }
+.green .proto-anno--inline { color: #15803d; opacity: .85; font-weight: 400; }
+.rp-title .proto-anno--inline { color: #b4b4b4; font-weight: 400; }
+.muted { color: #bbb; font-size: 12px; }
+
+.psteps { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+.pstep { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #bbb; }
+.pstep.done { color: #16a34a; }
+.pstep.running { color: #555; }
+.pstep-icon { width: 14px; height: 14px; flex-shrink: 0; }
+
+.imgcmp { display: flex; align-items: center; gap: 8px; margin: 8px 0 10px; }
+.icbox { width: 44px; height: 44px; border-radius: 7px; background: #f2f2f2; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.icbox.orig { background: #dde6f2; }
+.icbox.result { background: #f0fdf4; border: 1px solid #86efac; }
+.icbox.dark-src { background: #1a2030; }
+.ic-arrow { color: #d0d0d0; font-size: 14px; flex-shrink: 0; }
+
+/* Bbox selection count badge */
+.bbox-count-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #eff6ff; border: 1px solid #bfdbfe;
+  border-radius: 20px; padding: 4px 10px; font-size: 12px;
+  color: #3b82f6; font-weight: 500; margin-bottom: 8px;
+}
+.bbox-count-badge.empty { background: #f5f5f5; border-color: #e5e5e5; color: #aaa; }
+
+/* Bbox list */
+.bbox-items { display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; }
+.bbox-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 8px;
+  background: #f9f9f9; border: 1.5px solid transparent;
+  cursor: pointer; transition: all .15s; font-size: 12px; color: #444; user-select: none;
+}
+.bbox-item:hover { background: #f4f4f4; }
+.bbox-item.selected { background: #eff6ff; border-color: #bfdbfe; }
+.bbox-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.bbox-item-name { flex: 1; }
+.bbox-item-size { font-size: 10.5px; color: #ccc; flex-shrink: 0; }
+.bbox-item-del { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: #d0d0d0; cursor: pointer; transition: all .15s; flex-shrink: 0; }
+.bbox-item-del:hover { background: #fef2f2; color: #ef4444; }
+
+.kbd-hint { font-size: 10.5px; color: #d0d0d0; margin-top: 6px; text-align: center; }
+.kbd-hint kbd { background: #f0f0f0; border: 1px solid #e0e0e0; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-family: inherit; }
+
+.use-btn { width: 100%; background: #1a1a1a; color: #fff; border: none; border-radius: 9px; padding: 9px 0; font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 10px; transition: background .15s, opacity .15s; font-family: inherit; }
+.use-btn:hover:not(:disabled) { background: #333; }
+.use-btn:disabled { background: #e0e0e0; color: #b0b0b0; cursor: not-allowed; }
+.use-btn:not(:disabled) .proto-anno--inline { color: rgba(255,255,255,.7); }
+.use-btn:disabled .proto-anno--inline { color: #9ca3af; }
+
+/* Linear bbox nav (state 3, multi-image) */
+.bbox-wizard-nav {
+  display: flex; align-items: stretch; gap: 8px; margin-bottom: 10px;
+}
+.bbox-nav-btn {
+  flex: 1; background: #f2f2f2; color: #333; border: 1px solid #e8e8e8;
+  border-radius: 9px; padding: 8px 10px; font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: background .15s, opacity .15s, border-color .15s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1.2;
+}
+.bbox-nav-btn .proto-anno--block { margin: 0; font-size: 9px; font-weight: 400; color: #888; }
+.bbox-nav-btn:hover:not(:disabled) { background: #eaeaea; border-color: #ddd; }
+.bbox-nav-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+.bt-caption {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px; min-height: 38px;
+  font-size: 11px; font-weight: 600; color: #444;
+  white-space: nowrap;
+}
+.bt-caption .proto-anno--block { margin-top: 0; margin-left: 4px; font-size: 9px; color: #94a3b8; font-weight: 500; }
+
+.rp-spacer { flex: 1; min-height: 0; }
+.rp-input { padding: 12px; border-top: 1px solid #f4f4f4; flex-shrink: 0; }
+.input-card { background: #f7f7f7; border-radius: 12px; padding: 12px; border: 1px solid #ebebeb; }
+.input-text { font-size: 12px; color: #666; line-height: 1.55; margin-bottom: 10px; }
+.input-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.auto-sel {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #fff; border: 1px solid #e5e5e5; border-radius: 20px;
+  padding: 5px 11px; font-size: 12px; color: #444; cursor: pointer;
+  outline: none; font-family: inherit; appearance: none;
+}
+/* Auto-Process pill toggle + tooltip */
+.auto-process-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+.auto-process-tip {
+  position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+  white-space: nowrap; background: #fff; color: #1a1a1a; font-size: 11px; font-weight: 500;
+  padding: 7px 12px; border-radius: 8px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.1), 0 0 0 1px rgba(0,0,0,.06);
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .15s, visibility .15s; z-index: 20;
+}
+.auto-process-tip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 6px solid transparent; border-top-color: #fff;
+  margin-top: -1px;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.05));
+}
+.auto-process-wrap:hover .auto-process-tip { opacity: 1; visibility: visible; }
+.auto-process-toggle {
+  border: none; background: transparent; padding: 2px; cursor: pointer;
+  display: flex; align-items: center; font-family: inherit;
+}
+.auto-process-toggle:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 12px; }
+.auto-process-track {
+  width: 38px; height: 22px; border-radius: 11px; background: #d4d4d4;
+  position: relative; transition: background .2s; flex-shrink: 0;
+}
+.auto-process-toggle.on .auto-process-track { background: #1a1a1a; }
+.auto-process-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.18); transition: transform .2s;
+}
+.auto-process-toggle.on .auto-process-knob { transform: translateX(16px); }
+.send-btn { width: 28px; height: 28px; background: #1a1a1a; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background .15s; }
+.send-btn:hover { background: #3a3a3a; }
+
+/* ═══ DEMO NAV ═══ */
+.demo-nav {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.96); border: 1px solid #e5e5e5;
+  border-radius: 28px; padding: 8px 14px; z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(10px);
+}
+.demo-sep { width: 1px; height: 18px; background: #e8e8e8; margin: 0 4px; }
+.dnlbl {
+  font-size: 11px; color: #bbb;
+  display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 2px 4px;
+}
+.demo-nav .dnb { flex-direction: column; align-items: center; line-height: 1.15; padding-top: 6px; padding-bottom: 6px; }
+.demo-nav .dnb .proto-anno { display: block; margin-left: 0; margin-top: 2px; font-size: 8px; color: #a8a8a8; }
+.demo-nav .dnb.active .proto-anno { color: rgba(255,255,255,.75); }
+.demo-nav .dnb.sim .proto-anno { color: #a3a3a3; }
+.dnb { display: inline-flex; padding: 5px 13px; border-radius: 16px; border: 1px solid #e5e5e5; background: transparent; color: #888; font-size: 11.5px; cursor: pointer; transition: all .15s; white-space: nowrap; font-family: inherit; }
+.dnb:hover { border-color: #aaa; color: #333; background: #fafafa; }
+.dnb.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; font-weight: 500; }
+.dnb.sim { border-color: #d8d8d8; color: #666; background: #fafafa; font-size: 11px; }
+.dnb.sim:hover { background: #f0f0f0; }
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dotPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.75)} }
+@keyframes d1 { 0%,100%{opacity:.15} 20%{opacity:1} }
+@keyframes d2 { 0%,100%{opacity:.15} 40%{opacity:1} }
+@keyframes d3 { 0%,100%{opacity:.15} 60%{opacity:1} }
+
+.spin { width: 14px; height: 14px; border: 2px solid #e8e8e8; border-top-color: #aaa; border-radius: 50%; animation: spin .75s linear infinite; display: inline-block; flex-shrink: 0; }
+.spin-sm { width: 11px; height: 11px; border-width: 1.5px; }
+.ell-1 { animation: d1 1.4s ease-in-out infinite; }
+.ell-2 { animation: d2 1.4s ease-in-out infinite; }
+.ell-3 { animation: d3 1.4s ease-in-out infinite; }
+
+/* ═══ ADVANCED SECTION (inline right panel) ═══ */
+
+/* Scan line animation for backfill */
+@keyframes scanLine {
+  0%   { top: 0; opacity: .9; }
+  100% { top: 100%; opacity: 0; }
+}
+@keyframes fillReveal {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Section headers inside rp */
+.adv-sec-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.adv-sec-title {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600; color: #1a1a1a; cursor: pointer;
+}
+.adv-sec-title svg { color: #bbb; transition: transform .2s; }
+.adv-add-info {
+  font-size: 11px; color: #3b82f6; cursor: pointer; font-weight: 500;
+  display: flex; align-items: center; gap: 2px;
+}
+.adv-add-info:hover { opacity: .75; }
+
+/* Primary image frame */
+.adv-primary-thumb {
+  width: 78px; height: 78px; border: 1.5px dashed #d8d8d8;
+  border-radius: 10px; background: #f7f7f7; flex-shrink: 0;
+  position: relative; overflow: hidden;
+  transition: border-color .25s, box-shadow .25s;
+  display: flex; align-items: center; justify-content: center;
+}
+.adv-primary-thumb.recognizing { border-color: #3b82f6; border-style: dashed; background: #eff6ff; }
+.adv-primary-thumb.filled { border-style: solid; border-color: #e2e8f0; background: #fff; }
+.adv-primary-thumb.filled:hover { box-shadow: 0 0 0 2px #3b82f6; }
+.adv-primary-thumb img {
+  width: 100%; height: 100%; object-fit: contain; padding: 8px;
+  display: none;
+}
+.adv-primary-thumb.filled img { display: block; animation: fillReveal .35s ease; }
+.adv-primary-thumb .adv-ph-icon { position: absolute; }
+.adv-primary-thumb.filled .adv-ph-icon { display: none; }
+.adv-primary-thumb .adv-star {
+  position: absolute; top: 5px; left: 5px; color: #1a1a1a;
+  display: none; line-height: 1;
+}
+.adv-primary-thumb.filled .adv-star { display: block; }
+
+/* Scan line overlay */
+.adv-scan-line {
+  position: absolute; left: 0; right: 0; height: 2px; top: 0;
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  animation: scanLine 1s ease-in-out infinite;
+  pointer-events: none; display: none; z-index: 2;
+}
+.adv-primary-thumb.recognizing .adv-scan-line { display: block; }
+
+/* Acc scan line (amber) */
+.adv-acc-scan-line {
+  position: absolute; left: 0; right: 0; height: 2px; top: 0;
+  background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+  animation: scanLine .9s ease-in-out infinite;
+  pointer-events: none; display: none; z-index: 2;
+}
+
+/* Accessory thumbs */
+.adv-acc-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.adv-acc-thumb {
+  width: 78px; height: 78px; border: 1.5px dashed #d8d8d8;
+  border-radius: 10px; background: #f7f7f7; flex-shrink: 0;
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .25s, box-shadow .25s; cursor: pointer;
+}
+.adv-acc-thumb.recognizing { border-color: #f59e0b; background: #fffbeb; }
+.adv-acc-thumb.recognizing .adv-acc-scan-line { display: block; }
+.adv-acc-thumb.filled { border-style: solid; border-color: #e2e8f0; background: #fff; cursor: default; }
+.adv-acc-thumb.filled:hover { box-shadow: 0 0 0 2px #3b82f6; }
+.adv-acc-thumb img {
+  width: 100%; height: 100%; object-fit: contain; padding: 8px;
+  display: none;
+}
+.adv-acc-thumb.filled img { display: block; animation: fillReveal .35s ease; }
+.adv-acc-thumb .adv-ph-icon { position: absolute; }
+.adv-acc-thumb.filled .adv-ph-icon { display: none; }
+.adv-acc-add-btn {
+  width: 78px; height: 78px; border: 1.5px dashed #d8d8d8;
+  border-radius: 10px; background: #f7f7f7; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #c8c8c8; font-size: 20px; font-weight: 300;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.adv-acc-add-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+
+/* Fields inside adv section */
+.adv-fields { display: flex; gap: 8px; margin-top: 10px; }
+.adv-field { flex: 1; }
+.adv-field label { display: block; font-size: 10.5px; color: #bbb; margin-bottom: 4px; font-weight: 500; }
+.adv-field input {
+  width: 100%; border: 1px solid #ebebeb; border-radius: 8px; padding: 6px 10px;
+  font-size: 12px; color: #1a1a1a; font-family: inherit; outline: none;
+  background: #fafafa; transition: border-color .15s;
+}
+.adv-field input:focus { border-color: #3b82f6; background: #fff; }
+.adv-field input::placeholder { color: #d0d0d0; }
+
+/* The advanced section wrapper – always in panel, hidden when adv off or state < 4 */
+.adv-section { display: none; animation: fadeIn .3s ease; }
+.adv-section.show { display: block; }
+
+/* Backfill ripple on thumb border */
+@keyframes thumbHighlight {
+  0%   { box-shadow: 0 0 0 0 rgba(59,130,246,.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+  100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+}
+.adv-primary-thumb.just-filled { animation: thumbHighlight .6s ease; }
+
+/* ═══ ADD INFO MODAL ═══ */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.18); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .15s ease;
+}
+.modal-backdrop.hidden { display: none; }
+.modal-card {
+  background: #fff; border-radius: 20px; padding: 24px 24px 20px;
+  width: 440px; max-width: calc(100vw - 32px);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
+  animation: fadeIn .2s ease;
+}
+.modal-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 18px; }
+.modal-acc-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+.modal-acc-img {
+  width: 90px; height: 90px; border-radius: 10px; border: 1px solid #e8e8e8;
+  object-fit: contain; padding: 6px; background: #f7f7f7; flex-shrink: 0;
+}
+.modal-fields { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.modal-field label { display: block; font-size: 11px; color: #aaa; margin-bottom: 4px; font-weight: 500; }
+.modal-field input {
+  width: 100%; border: 1px solid #ebebeb; border-radius: 9px; padding: 8px 12px;
+  font-size: 13px; color: #1a1a1a; font-family: inherit; outline: none;
+  background: #f7f7f7; transition: border-color .15s;
+}
+.modal-field input:focus { border-color: #3b82f6; background: #fff; }
+.modal-field input::placeholder { color: #d0d0d0; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.modal-cancel {
+  background: #f2f2f2; color: #555; border: none; border-radius: 20px;
+  padding: 9px 22px; font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: background .15s;
+}
+.modal-cancel:hover { background: #e8e8e8; }
+.modal-confirm {
+  background: #1a1a1a; color: #fff; border: none; border-radius: 20px;
+  padding: 9px 22px; font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: background .15s;
+}
+.modal-confirm:hover { background: #333; }
+
+/* Add Info UI hidden (prototype) */
+.adv-acc-thumb .acc-info-chip,
+.adv-acc-thumb .acc-info-dot { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo-wrap">
+    <div class="logo-icon">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4" fill="#fff"/><path d="M3.5 6a2.5 2.5 0 005 0" fill="#1a1a1a"/></svg>
+    </div>
+    <span class="logo-text">BeePOP</span>
+  </div>
+  <div class="h-sep"></div>
+  <span class="file-name">Stanley Quencher</span>
+  <span class="badge">Private<span class="proto-anno proto-anno--inline">私有</span></span>
+  <div class="h-right">
+    <div class="hbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+    <div class="hbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></div>
+  </div>
+</header>
+
+<div class="body">
+
+  <!-- TOOLBAR -->
+  <nav class="toolbar">
+    <div class="tbtn active"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><polyline points="2 15.5 12 22 22 15.5"/><polyline points="2 12 12 18.5 22 12"/></svg></div>
+    <div class="tbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+    <div class="tbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <div class="tbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
+    <div class="tb-spacer"></div>
+    <div class="tbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+  </nav>
+
+  <!-- CANVAS -->
+  <main class="canvas" id="mainCanvas">
+    <div class="canvas-hint" id="canvasHint"></div>
+
+    <!-- Side buttons (state 3) -->
+    <div class="canvas-side-btn" id="csLeft" title="Reset all boxes — 重置选框" onclick="clearAllBoxes()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+    </div>
+    <div class="canvas-side-btn" id="csRight" title="Preview — 预览">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </div>
+
+    <!-- ── STATE 1: Processing ── -->
+    <div class="cards-wrap cs active" id="cs1">
+      <div class="pcard" style="background:#f5f5f5;">
+        <img id="stageImg1" data-stage-primary="1"
+             src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
+             alt="Product" style="width:100%;height:100%;object-fit:contain;padding:10px;"/>
+        <div class="proc-overlay">
+          <span class="proc-label">Processing<span class="ell-1">.</span><span class="ell-2">.</span><span class="ell-3">.</span><span class="proto-anno proto-anno--block">处理中</span></span>
+          <div class="proc-bar-wrap"><div class="proc-bar" id="procBar"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATE 2: Auto Success ── -->
+    <div class="cards-wrap cs" id="cs2">
+      <div class="pcard" style="background:#fff;">
+        <img id="stageImg2" data-stage-primary="1"
+             src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
+             alt="Product processed" style="width:100%;height:100%;object-fit:contain;padding:10px;"/>
+      </div>
+    </div>
+
+    <!-- ── STATE 3: Manual BBox ── -->
+    <div class="cards-wrap cs" id="cs3">
+      <div class="pcard bbox-target" id="bboxTargetCard" style="background:#f5f5f5;">
+        <img id="manualStageImg"
+             src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
+             alt="Editing image" style="width:100%;height:100%;object-fit:contain;padding:10px;"/>
+      </div>
+    </div>
+
+    <!-- ── STATE 4: Confirmed ── -->
+    <div class="cards-wrap cs" id="cs4">
+      <div class="pcard" style="background:#fff;position:relative;">
+        <img id="stageImg4" data-stage-primary="1"
+             src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
+             alt="Product confirmed" style="width:100%;height:100%;object-fit:contain;padding:10px;"/>
+        <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;font-size:11px;color:#16a34a;font-weight:500;background:rgba(255,255,255,0.92);padding:4px 10px;border-radius:20px;border:1px solid #86efac;max-width:calc(100% - 20px);flex-wrap:wrap;justify-content:center;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+          <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="7.5" fill="#22c55e"/><path d="M4.5 7.5l2.5 2.5 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Subject confirmed<span class="proto-anno proto-anno--inline">主体已确认</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BBox drawing SVG layer -->
+    <svg id="bboxLayer" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <!-- Transparent hit-area ensures the entire canvas captures pointer events -->
+      <rect id="bboxBg" width="100%" height="100%" fill="transparent" style="pointer-events:all;"/>
+    </svg>
+
+    <!-- Bottom BBox Toolbar (state 3) -->
+    <div id="bboxToolbar">
+      <!-- Role caption: single = subject only; multi = linear step (no mode tabs) -->
+      <div class="bt-card" id="bboxRoleCard">
+        <div class="bt-caption" id="bboxCaptionSingle" style="display:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke-width="1.5" opacity=".35"/></svg>
+          <span>Subject<span class="proto-anno proto-anno--inline">主体</span></span>
+        </div>
+        <div class="bt-caption" id="bboxCaptionLinear" style="display:none;">
+          <span id="bboxLinearCaptionText"></span>
+        </div>
+        <!-- Legacy mode switch (kept for JS toggles on hidden single-image accessory nodes) -->
+        <div class="bt-tool active" id="modeBtnSubject" onclick="setBboxMode('subject')" style="display:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          Subject<span class="proto-anno proto-anno--block">主体</span>
+          <div class="bt-tool-dot" id="modeSubjectDot"></div>
+        </div>
+        <div class="bt-sep" id="modeBtnSep" style="display:none;"></div>
+        <div class="bt-tool" id="modeBtnAccessory" onclick="setBboxMode('accessory')" style="display:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
+          Accessory<span class="proto-anno proto-anno--block">配件</span>
+          <div class="bt-tool-dot" id="modeAccessoryDot" style="background:#f59e0b;"></div>
+        </div>
+      </div>
+      <!-- Right: size + erase -->
+      <div class="bt-card bt-size-wrap">
+        <span class="bt-size-label">Box size<span class="proto-anno proto-anno--inline">选框大小</span></span>
+        <input type="range" class="bt-slider" id="bboxSizeSlider" min="40" max="280" value="120" disabled>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="rp">
+    <div class="rp-hdr">
+      <span class="rp-title">Untitled<span class="proto-anno proto-anno--inline">未命名</span></span>
+      <span class="rp-close"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></span>
+    </div>
+
+    <div class="rp-scroll">
+    <div class="rp-sec" id="origThumbsSection">
+      <div class="rp-lbl-wrap">
+        <div class="rp-lbl" style="margin-bottom:0;">Original Images</div>
+        <span class="proto-anno proto-anno--inline">原始图片</span>
+      </div>
+      <div class="orig-thumbs" id="origThumbs"></div>
+    </div>
+
+    <div class="rp-sec">
+      <div class="ai-badge">
+        <div class="ai-dot processing" id="aiDot"></div>
+        <span>AI Processing</span><span class="proto-anno proto-anno--inline">AI 处理</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+
+      <!-- STATE 1 -->
+      <div class="ss active sbody" id="ss1">
+        <div class="srow"><div class="spin" style="margin-top:2px;"></div><span><span id="ss1Lead">Image received! Let's get it <strong style="color:#1a1a1a;">ready for the spotlight.</strong></span><span class="proto-anno proto-anno--block" style="margin-top:6px;">已收到图片（首张为主体，其余为配件图），准备上架展示</span></span></div>
+        <div class="psteps" id="procSteps">
+          <div class="pstep running" id="pstep0"><div class="spin spin-sm pstep-icon"></div>Removing watermarks<span class="ell-1">.</span><span class="ell-2">.</span><span class="ell-3">.</span></div>
+          <div class="pstep" id="pstep1"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Removing background</div>
+          <div class="pstep" id="pstep2"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Enhancing quality</div>
+          <div class="pstep" id="pstep3"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Identifying subject</div>
+        </div>
+        <div class="proto-anno proto-anno--block" style="margin-top:10px;">步骤对照：去水印 → 去背景 → 增强画质 → 识别主体</div>
+      </div>
+
+      <!-- STATE 2 -->
+      <div class="ss sbody" id="ss2">
+        <div class="srow" style="margin-bottom:6px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-top:2px;"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="green">Product ready<span class="proto-anno proto-anno--inline">商品就绪</span></span></div>
+        <div class="imgcmp">
+          <div class="icbox orig"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><rect x="6" y="2" width="12" height="3" rx="1.5" fill="#9fb0c8"/><rect x="4" y="5" width="16" height="3" rx="1.5" fill="#a8b8cc"/><rect x="4" y="8" width="16" height="18" rx="2" fill="#b0bcd8"/><rect x="3" y="26" width="18" height="4" rx="2" fill="#a8b8cc"/></svg></div>
+          <span class="ic-arrow">→</span>
+          <div class="icbox result"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><rect x="6" y="2" width="12" height="3" rx="1.5" fill="#c6d4e4"/><rect x="4" y="5" width="16" height="3" rx="1.5" fill="#ced8e8"/><rect x="4" y="8" width="16" height="18" rx="2" fill="#d8e4f0"/><rect x="3" y="26" width="18" height="4" rx="2" fill="#ced8e8"/></svg></div>
+        </div>
+        <div class="srow muted"><div class="spin spin-sm" style="margin-top:1px;"></div><span>Continuing to generation…<span class="proto-anno proto-anno--inline">继续进入生成</span></span></div>
+      </div>
+
+      <!-- STATE 3 -->
+      <div class="ss sbody" id="ss3">
+        <!-- 主体区域 -->
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <div class="bbox-count-badge empty" id="subjectCountBadge" style="margin-bottom:0;flex:1;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            <span id="subjectCountText">No subject selected<span class="proto-anno proto-anno--inline">主体未选择</span></span>
+          </div>
+          <!-- <button onclick="setBboxMode('subject')" id="addSubjectBtn" style="font-size:11px;color:#3b82f6;background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:5px;white-space:nowrap;font-family:inherit;">+ 添加</button> -->
+        </div>
+        <div class="bbox-items" id="subjectItems" style="margin-bottom:10px;"></div>
+
+        <!-- 配件区域（仅多图） -->
+        <div id="ss3AccessoryBlock">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <div class="bbox-count-badge empty" id="accessoryCountBadge" style="margin-bottom:0;flex:1;border-color:#fde68a;color:#92400e;background:#fffbeb;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" stroke-width="1.5"/></svg>
+            <span id="accessoryCountText">Accessories<span class="proto-anno proto-anno--inline">配件</span></span>
+          </div>
+        </div>
+        <div class="bbox-items" id="accessoryItems" style="margin-bottom:10px;"></div>
+        </div>
+
+        <div class="bbox-wizard-nav" id="bboxNavRow" style="display:none;">
+          <button type="button" class="bbox-nav-btn" id="bboxNavPrev" onclick="bboxStepPrev()">Previous<span class="proto-anno proto-anno--block">上一步</span></button>
+          <button type="button" class="bbox-nav-btn" id="bboxNavNext" onclick="bboxNavNextOrFinish()">Next<span class="proto-anno proto-anno--block">下一步</span></button>
+        </div>
+
+        <button class="use-btn" id="useBtn" disabled onclick="confirmSubject()"><span id="useBtnMain">Done<span class="proto-anno proto-anno--inline">完成</span></span></button>
+        <div class="kbd-hint" id="bboxKbdHint">Thumbnails switch image · click to place · drag · <kbd>Del</kbd><span class="proto-anno proto-anno--block">缩略图切换当前图 · 单击放置 · 拖拽 · Del 删除</span></div>
+      </div>
+
+      <!-- STATE 4 -->
+      <div class="ss sbody" id="ss4">
+        <div class="srow" style="margin-bottom:6px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-top:2px;"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="green">Subject confirmed<span class="proto-anno proto-anno--inline">主体已确认</span></span></div>
+        <div class="imgcmp">
+          <div class="icbox dark-src"><svg width="22" height="30" viewBox="0 0 22 30" fill="none"><rect x="5" y="2" width="12" height="3" rx="1.5" fill="#5878b0" opacity=".9"/><rect x="3" y="5" width="16" height="3" rx="1.5" fill="#5070a0" opacity=".9"/><rect x="3" y="8" width="16" height="16" rx="2" fill="#5878a8" opacity=".9"/><rect x="2" y="24" width="18" height="4" rx="2" fill="#5070a0" opacity=".9"/></svg></div>
+          <span class="ic-arrow">→</span>
+          <div class="icbox result"><svg width="22" height="30" viewBox="0 0 22 30" fill="none"><rect x="5" y="2" width="12" height="3" rx="1.5" fill="#c6d4e4"/><rect x="3" y="5" width="16" height="3" rx="1.5" fill="#ced8e8"/><rect x="3" y="8" width="16" height="16" rx="2" fill="#d8e4f0"/><rect x="2" y="24" width="18" height="4" rx="2" fill="#ced8e8"/></svg></div>
+        </div>
+        <div class="srow muted"><div class="spin spin-sm" style="margin-top:1px;"></div><span>Moving to generation…<span class="proto-anno proto-anno--inline">进入生成</span></span></div>
+      </div>
+    </div>
+
+    <div class="rp-spacer"></div>
+
+    <!-- ADVANCED SECTION — shown in-panel when advanced mode ON and state >= 4 -->
+
+    <div class="adv-section" id="advSection">
+      <div style="padding: 14px 16px 0; border-top: 1px solid #f0f0f0;">
+
+        <!-- Primary -->
+        <div class="adv-sec-hdr">
+          <div class="adv-sec-title">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            Primary<span class="proto-anno proto-anno--inline">主商品</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:14px;">
+          <!-- Primary thumb -->
+          <div class="adv-primary-thumb" id="advPrimaryThumb">
+            <div class="adv-scan-line"></div>
+            <img id="advPrimaryImg" src="" alt="Primary"/>
+            <span class="adv-star">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </span>
+            <!-- placeholder icon -->
+            <svg class="adv-ph-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+        </div>
+
+        <!-- Accessories -->
+        <div class="adv-sec-hdr">
+          <div class="adv-sec-title">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            Accessories<span class="proto-anno proto-anno--inline">配件</span>
+          </div>
+          <!-- <span class="adv-add-info" onclick="advAddAcc(true)">
+            Add Info
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </span> -->
+        </div>
+        <div class="adv-acc-row" id="advAccRow">
+          <div class="adv-acc-add-btn" id="advAccAddBtn" onclick="advAddAcc()">+</div>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /rp-scroll -->
+    <div class="rp-input" id="rpInput">
+      <div class="input-card">
+        <div class="input-text">Product: Stanley Quencher H2.0 FlowState™ Tumbler. Audience: Eco-conscious commuters, fitness enthusiasts, and trendy professionals. Benefit: Superior thermal retention and effortless portability for daily hydration. Material: Recycled 18/8 stainless steel with a matte powder-coat finish.<span class="proto-anno proto-anno--block">原型说明：示例商品 briefing（英文稿）；上线可复制为任意产品描述。</span></div>
+        <div class="input-foot">
+          <div class="auto-process-wrap">
+            <span class="auto-process-tip">Auto-Process<span class="proto-anno proto-anno--block" style="color:#64748b;font-weight:400;margin-top:2px;">自动处理</span></span>
+            <button type="button" class="auto-process-toggle on" id="autoProcessToggle" aria-pressed="true" aria-label="Toggle Auto-Process">
+              <span class="auto-process-track"><span class="auto-process-knob"></span></span>
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <select id="advModeSel" class="auto-sel" title="Workflow mode — 工作流模式">
+              <option value="auto">Auto</option>
+              <option value="advanced">Advanced</option>
+            </select>
+            <span class="proto-anno proto-anno--inline" style="max-width:72px;line-height:1.2;">自动 / 高级</span>
+            <div class="send-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ADD INFO MODAL -->
+<!-- <div class="modal-backdrop hidden" id="addInfoModal">
+  <div class="modal-card">
+    <div class="modal-title">Add Info</div>
+    <div style="font-size:12px;color:#bbb;margin-bottom:12px;" id="modalAccLabel">Accessories</div>
+    <div class="modal-acc-row">
+      <img class="modal-acc-img" id="modalAccImg" src="" alt="Accessory"/>
+      <div class="modal-fields">
+        <div class="modal-field">
+          <label>Quantity</label>
+          <input type="text" id="modalQty" placeholder="Input Quan"/>
+        </div>
+        <div class="modal-field">
+          <label>Dimensions</label>
+          <input type="text" id="modalDim" placeholder="Input Dimensions"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeAddInfoModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmAddInfo()">Confirm</button>
+    </div>
+  </div>
+</div> -->
+
+<!-- DEMO NAV -->
+<div class="demo-nav">
+  <span class="dnlbl">Simulate<span class="proto-anno proto-anno--inline">模拟流程</span></span>
+  <button class="dnb sim" onclick="simulateFlow(true)">▶ AI success<span class="proto-anno">识别成功</span></button>
+  <button class="dnb sim" onclick="simulateFlow(false)">▶ AI failed<span class="proto-anno">识别失败</span></button>
+  <div class="demo-sep"></div>
+  <span class="dnlbl">Jump<span class="proto-anno proto-anno--inline">直跳</span></span>
+  <button class="dnb" id="nb1" onclick="goState(1)">① Processing<span class="proto-anno">处理中</span></button>
+  <button class="dnb" id="nb2" onclick="goState(2)">② Detected<span class="proto-anno">识别成功</span></button>
+  <button class="dnb" id="nb3" onclick="goState(3)">③ Manual box<span class="proto-anno">手动框选</span></button>
+  <button class="dnb" id="nb4" onclick="goState(4)">④ Confirmed<span class="proto-anno">确认成功</span></button>
+</div>
+
+<script>
+/* ════════════════════ STATE MACHINE ════════════════════ */
+let curState = 0;
+let autoTimer = null;
+
+const STEP_LABELS = [
+  ['Removing watermarks', 'Watermark removed'],
+  ['Removing background', 'Background removed'],
+  ['Enhancing quality',   'Quality enhanced'],
+  ['Identifying subject', 'Subject identified'],
+];
+let stepTimers = [];
+
+function goState(n) {
+  if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+  curState = n;
+
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('cs' + i).classList.toggle('active', i === n);
+    document.getElementById('ss' + i).classList.toggle('active', i === n);
+    document.getElementById('nb' + i).classList.toggle('active', i === n);
+  }
+
+  const dot = document.getElementById('aiDot');
+  dot.className = 'ai-dot ' + ({1:'processing',2:'success',3:'warn',4:'success'}[n] || 'idle');
+
+  const hint = document.getElementById('canvasHint');
+  if (n !== 3) {
+    hint.innerHTML = '';
+    hint.classList.remove('show');
+  }
+
+  // BBox layer + side buttons + toolbar
+  const layer = document.getElementById('bboxLayer');
+  const toolbar = document.getElementById('bboxToolbar');
+  const csLeft = document.getElementById('csLeft');
+  const csRight = document.getElementById('csRight');
+
+  if (n === 3) {
+    layer.classList.add('active');
+    toolbar.classList.add('show');
+    csLeft.classList.add('show');
+    csRight.classList.add('show');
+  } else {
+    layer.classList.remove('active');
+    toolbar.classList.remove('show');
+    csLeft.classList.remove('show');
+    csRight.classList.remove('show');
+  }
+
+  if (n === 1) startProcAnimation();
+  if (n === 4) onState4();
+  // Hide adv section when navigating away from state 4
+  if (n !== 4) document.getElementById('advSection').classList.remove('show');
+  if (n === 3) {
+    setBboxMode('subject');
+    ensureSubjectAiSeeded();
+    seedAllAccessoryAiIfMulti();
+    renderAll();
+    syncSidebar();
+    syncManualBoxChrome();
+    updateCanvasHint3();
+  }
+}
+
+
+function startProcAnimation() {
+  stepTimers.forEach(clearTimeout);
+  stepTimers = [];
+  for (let i = 0; i <= 3; i++) {
+    const el = document.getElementById('pstep' + i);
+    el.className = 'pstep';
+    el.innerHTML = `<svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>${STEP_LABELS[i][0]}`;
+  }
+  document.getElementById('procBar').style.width = '0%';
+
+  function activate(i) {
+    const el = document.getElementById('pstep' + i);
+    el.className = 'pstep running';
+    el.innerHTML = `<div class="spin spin-sm pstep-icon"></div>${STEP_LABELS[i][0]}<span class="ell-1">.</span><span class="ell-2">.</span><span class="ell-3">.</span>`;
+    document.getElementById('procBar').style.width = ((i + .5) / 4 * 100) + '%';
+  }
+  function complete(i) {
+    const el = document.getElementById('pstep' + i);
+    el.className = 'pstep done';
+    el.innerHTML = `<svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#22c55e"/><path d="M4 7l2 2 4-4" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${STEP_LABELS[i][1]}`;
+    document.getElementById('procBar').style.width = ((i + 1) / 4 * 100) + '%';
+  }
+
+  activate(0);
+  const D = 700;
+  for (let i = 0; i <= 3; i++) {
+    stepTimers.push(setTimeout(() => complete(i), D * (i + 1)));
+    if (i < 3) stepTimers.push(setTimeout(() => activate(i + 1), D * (i + 1) + 80));
+  }
+}
+
+function simulateFlow(aiSuccess) {
+  clearAllBoxes();
+  goState(1);
+  if (!autoProcess) return;
+  autoTimer = setTimeout(() => {
+    if (aiSuccess) {
+      goState(2);
+      autoTimer = setTimeout(() => goState(4), 1800);
+    } else {
+      goState(3);
+    }
+  }, 3200);
+}
+
+
+/* ════════════════════ UPLOAD SET (prototype) ════════════════════ */
+/** Index 0 = primary subject image; 1..n = accessory images (each gets its own bbox layer). */
+const UPLOAD_IMAGES = [
+  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
+  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
+  'https://images.unsplash.com/photo-1505740420928-5e560c06d30d?w=400&q=80',
+];
+let activeImageIndex = 0;
+
+function syncPrimaryStageImages() {
+  const u = UPLOAD_IMAGES[0];
+  document.querySelectorAll('[data-stage-primary]').forEach(el => { el.src = u; });
+}
+
+function applyManualStageImage() {
+  const el = document.getElementById('manualStageImg');
+  if (el) el.src = UPLOAD_IMAGES[activeImageIndex] || UPLOAD_IMAGES[0];
+}
+
+function renderOrigThumbs() {
+  const host = document.getElementById('origThumbs');
+  if (!host) return;
+  host.innerHTML = '';
+  UPLOAD_IMAGES.forEach((src, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'orig-thumb';
+    wrap.style.width = '58px';
+    wrap.style.height = '58px';
+    wrap.dataset.imgIndex = String(i);
+    const tag = i === 0 ? '主体' : `配件${i}`;
+    wrap.innerHTML = `<img src="${src.replace(/"/g, '&quot;')}" alt="" style="width:100%;height:100%;object-fit:cover;"/><span class="thumb-tag">${tag}</span>`;
+    wrap.addEventListener('click', () => selectOrigThumb(i));
+    host.appendChild(wrap);
+  });
+  syncOrigThumbsActiveClass();
+  syncManualBoxChrome();
+}
+
+function syncOrigThumbsActiveClass() {
+  document.querySelectorAll('#origThumbs .orig-thumb').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.imgIndex, 10) === activeImageIndex);
+  });
+}
+
+function selectOrigThumb(i) {
+  activeImageIndex = Math.max(0, Math.min(i, UPLOAD_IMAGES.length - 1));
+  if (activeImageIndex === 0) setBboxMode('subject');
+  else setBboxMode('accessory');
+  if (curState === 3 && activeImageIndex >= 1) ensureAccessoryImageSeeded(activeImageIndex);
+}
+
+function updateSs1Lead() {
+  const el = document.getElementById('ss1Lead');
+  if (!el) return;
+  const n = UPLOAD_IMAGES.length;
+  if (n <= 1) {
+    el.innerHTML = `Image received! Let's get it <strong style="color:#1a1a1a;">ready for the spotlight.</strong>`;
+  } else {
+    el.innerHTML = `Received <strong style="color:#1a1a1a;">${n} images</strong> — first is primary, rest are accessories. Processing each the same way.`;
+  }
+}
+
+function updateCanvasHint3() {
+  const hint = document.getElementById('canvasHint');
+  if (!hint) return;
+  const cur = activeImageIndex + 1;
+  const role = activeImageIndex === 0 ? 'Subject' : 'Accessory';
+  const navHint = isMultiBboxUpload() ? ' · Next/Prev in panel' : '';
+  const navCn = isMultiBboxUpload() ? ' · 右栏上一步/下一步' : '';
+  const tail = activeImageIndex === 0
+    ? ' — one subject box: adjust or click empty to reposition'
+    : ' — adjust boxes, click empty to add another';
+  const tailCn = activeImageIndex === 0
+    ? ' · 仅一个主体：调整或单击空白重放'
+    : ' · 调整选框，单击空白可加多个配件框';
+  hint.innerHTML = `<span class="hint-main">Image ${cur}/${UPLOAD_IMAGES.length} · ${role}${navHint}${tail}</span><span class="proto-anno proto-anno--block">第 ${cur}/${UPLOAD_IMAGES.length} 张 · ${activeImageIndex === 0 ? '主体' : '配件'}${navCn}${tailCn}</span>`;
+  hint.classList.add('show');
+}
+
+function isMultiBboxUpload() {
+  return UPLOAD_IMAGES.length > 1;
+}
+
+function updateLinearCaption() {
+  const el = document.getElementById('bboxLinearCaptionText');
+  if (!el || !isMultiBboxUpload()) return;
+  const n = UPLOAD_IMAGES.length;
+  const cur = activeImageIndex + 1;
+  if (activeImageIndex === 0) {
+    el.innerHTML = `Step <strong>1</strong>/${n} · Subject<span class="proto-anno proto-anno--inline">主体确认</span>`;
+  } else {
+    el.innerHTML = `Step <strong>${cur}</strong>/${n} · Accessories<span class="proto-anno proto-anno--inline">图 ${cur} 配件框</span>`;
+  }
+}
+
+function currentImageStepComplete() {
+  if (activeImageIndex === 0) return subjectBoxesOk();
+  const i = activeImageIndex;
+  return boxes.some(b => b.mode === 'accessory' && b.imageIndex === i);
+}
+
+function updateBboxNavButtons() {
+  const row = document.getElementById('bboxNavRow');
+  const prev = document.getElementById('bboxNavPrev');
+  const next = document.getElementById('bboxNavNext');
+  if (!row || !prev || !next) return;
+  if (curState !== 3 || !isMultiBboxUpload()) {
+    row.style.display = 'none';
+    return;
+  }
+  row.style.display = 'flex';
+  prev.disabled = activeImageIndex <= 0;
+  const onLast = activeImageIndex >= UPLOAD_IMAGES.length - 1;
+  next.style.display = '';
+  if (onLast) {
+    next.innerHTML = `Finish<span class="proto-anno proto-anno--block">完成</span>`;
+    next.disabled = !(subjectBoxesOk() && allAccessoryStepsResolved());
+  } else {
+    next.innerHTML = `Next<span class="proto-anno proto-anno--block">下一步</span>`;
+    next.disabled = !currentImageStepComplete();
+  }
+}
+
+function applyBboxStepIndex(idx) {
+  activeImageIndex = Math.max(0, Math.min(idx, UPLOAD_IMAGES.length - 1));
+  bboxMode = activeImageIndex === 0 ? 'subject' : 'accessory';
+  selectedId = null;
+  const ms = document.getElementById('modeBtnSubject');
+  const ma = document.getElementById('modeBtnAccessory');
+  if (ms && ma) {
+    ms.classList.toggle('active', bboxMode === 'subject');
+    ma.classList.toggle('active', bboxMode === 'accessory');
+  }
+  applyManualStageImage();
+  syncOrigThumbsActiveClass();
+  if (curState === 3) {
+    if (idx === 0) ensureSubjectAiSeeded();
+    else ensureAccessoryImageSeeded(idx);
+    updateCanvasHint3();
+    updateLinearCaption();
+  }
+  if (previewEl) {
+    const c = bboxMode === 'subject' ? '#3b82f6' : '#f59e0b';
+    previewEl.setAttribute('stroke', c);
+    previewEl.setAttribute('fill', c + '14');
+  }
+  renderAll();
+  syncSidebar();
+}
+
+function bboxStepNext() {
+  if (!isMultiBboxUpload() || curState !== 3) return;
+  if (activeImageIndex >= UPLOAD_IMAGES.length - 1) return;
+  if (!currentImageStepComplete()) return;
+  applyBboxStepIndex(activeImageIndex + 1);
+}
+
+function bboxNavNextOrFinish() {
+  if (!isMultiBboxUpload() || curState !== 3) return;
+  if (activeImageIndex >= UPLOAD_IMAGES.length - 1) {
+    confirmSubject();
+    return;
+  }
+  bboxStepNext();
+}
+
+function bboxStepPrev() {
+  if (!isMultiBboxUpload() || curState !== 3) return;
+  if (activeImageIndex <= 0) return;
+  applyBboxStepIndex(activeImageIndex - 1);
+}
+
+/** Single-image: hide accessory UI & thumbs row; multi-image: linear captions + nav. */
+function syncManualBoxChrome() {
+  const multi = isMultiBboxUpload();
+  const origSec = document.getElementById('origThumbsSection');
+  if (origSec) origSec.style.display = multi ? '' : 'none';
+
+  const accBlock = document.getElementById('ss3AccessoryBlock');
+  if (accBlock) accBlock.style.display = multi ? '' : 'none';
+
+  const capSingle = document.getElementById('bboxCaptionSingle');
+  const capLin = document.getElementById('bboxCaptionLinear');
+  if (capSingle && capLin) {
+    capSingle.style.display = multi ? 'none' : 'flex';
+    capLin.style.display = multi ? 'flex' : 'none';
+  }
+  if (multi) updateLinearCaption();
+
+  const hint = document.getElementById('bboxKbdHint');
+  if (hint) {
+    if (multi) {
+      hint.innerHTML = `Previous / Next · thumbnails · subject = one box · accessories = multiple · <kbd>Del</kbd> remove<span class="proto-anno proto-anno--block">上一步/下一步 · 缩略图 · 主体仅一个框 · 配件可多框 · Del 删除</span>`;
+    } else {
+      hint.innerHTML = `Adjust box · drag · <kbd>Del</kbd> remove<span class="proto-anno proto-anno--block">调整选框 · 拖拽 · Del 删除</span>`;
+    }
+  }
+
+  // syncUseBtnLabel();
+  // updateBboxNavButtons();
+}
+
+/* ════════════════════ BBOX INTERACTION ════════════════════ */
+const SUBJECT_COLORS   = ['#3b82f6', '#8b5cf6', '#10b981'];
+const ACCESSORY_COLORS = ['#f59e0b', '#ef4444', '#ec4899', '#fb923c'];
+const HANDLE_SIZE = 7;
+const MIN_BOX = 32;
+const DEFAULT_W = 120;
+const DEFAULT_H = 120;
+
+let bboxMode = 'subject'; // 'subject' | 'accessory'
+let boxes = [];
+let nextId = 1;
+let selectedId = null;
+
+// Drag state
+let drag = null;
+// drag = null | { mode:'move', id, sx,sy,ox,oy } | { mode:'resize', id, dir, sx,sy, orig:{x,y,w,h} }
+
+// Hover preview
+let previewVisible = false;
+let previewEl = null;
+
+const bboxLayer = document.getElementById('bboxLayer');
+const slider = document.getElementById('bboxSizeSlider');
+
+function getLayerCenter() {
+  const r = bboxLayer.getBoundingClientRect();
+  return { cx: r.width / 2, cy: r.height / 2 };
+}
+
+/** Push a prototype preset box (initial placement on canvas). */
+function pushAiBox({ mode, imageIndex, w, h, offsetX, offsetY }) {
+  const { cx, cy } = getLayerCenter();
+  const ox = offsetX || 0, oy = offsetY || 0;
+  const id = nextId++;
+  const isAccessory = mode === 'accessory';
+  const palette = isAccessory ? ACCESSORY_COLORS : SUBJECT_COLORS;
+  const sameSlot = isAccessory
+    ? boxes.filter(b => b.mode === 'accessory' && b.imageIndex === imageIndex)
+    : boxes.filter(b => b.mode === 'subject' && b.imageIndex === 0);
+  const color = palette[sameSlot.length % palette.length];
+  const label = isAccessory ? `Accessory ${sameSlot.length + 1}` : 'Subject';
+  boxes.push({
+    id, mode, imageIndex: isAccessory ? imageIndex : 0,
+    x: cx - w / 2 + ox, y: cy - h / 2 + oy,
+    w, h, color, label,
+    aiSuggested: true
+  });
+}
+
+function ensureSubjectAiSeeded() {
+  if (boxes.some(b => b.mode === 'subject' && b.imageIndex === 0)) return;
+  pushAiBox({ mode: 'subject', imageIndex: 0, w: DEFAULT_W, h: DEFAULT_H, offsetX: 0, offsetY: 0 });
+}
+
+function ensureAccessoryImageSeeded(imgIdx) {
+  if (imgIdx < 1) return;
+  if (boxes.some(b => b.mode === 'accessory' && b.imageIndex === imgIdx)) return;
+  const o = ((imgIdx % 5) - 2) * 14;
+  pushAiBox({ mode: 'accessory', imageIndex: imgIdx, w: DEFAULT_W, h: DEFAULT_H, offsetX: o, offsetY: Math.round(-o * 0.45) });
+}
+
+function seedAllAccessoryAiIfMulti() {
+  if (UPLOAD_IMAGES.length <= 1) return;
+  for (let i = 1; i < UPLOAD_IMAGES.length; i++) {
+    ensureAccessoryImageSeeded(i);
+  }
+}
+
+function syncUseBtnLabel() {
+  const el = document.getElementById('useBtnMain');
+  if (!el) return;
+  if (!isMultiBboxUpload()) {
+    el.innerHTML = `Done<span class="proto-anno proto-anno--inline">完成</span>`;
+  } else {
+    el.innerHTML = `Finish<span class="proto-anno proto-anno--inline">全部确认后完成</span>`;
+  }
+}
+
+/* ── Coordinate helper ── */
+function layerPt(e) {
+  const r = bboxLayer.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
+}
+
+/* ── SVG helper ── */
+function svg(tag, attrs = {}, style = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  for (const [k, v] of Object.entries(style)) el.style[k] = v;
+  return el;
+}
+
+/* ════ HOVER PREVIEW ════ */
+function getOrCreatePreview() {
+  if (!previewEl) {
+    previewEl = svg('rect', { rx: 6, fill: '#3b82f614', stroke: '#3b82f6', 'stroke-width': 2, 'stroke-dasharray': '7,5' }, { pointerEvents: 'none' });
+    bboxLayer.appendChild(previewEl);
+  }
+  return previewEl;
+}
+
+function showPreview(cx, cy) {
+  const el = getOrCreatePreview();
+  el.setAttribute('x', cx - DEFAULT_W / 2);
+  el.setAttribute('y', cy - DEFAULT_H / 2);
+  el.setAttribute('width', DEFAULT_W);
+  el.setAttribute('height', DEFAULT_H);
+  el.style.display = 'block';
+  previewVisible = true;
+  bboxLayer.style.cursor = 'crosshair';
+}
+
+function hidePreview() {
+  if (previewEl) previewEl.style.display = 'none';
+  previewVisible = false;
+}
+
+/* ════ MODE SWITCH ════ */
+function setBboxMode(mode) {
+  bboxMode = mode;
+  const isSubject = mode === 'subject';
+  if (isSubject) activeImageIndex = 0;
+  else if (UPLOAD_IMAGES.length > 1 && activeImageIndex === 0) activeImageIndex = 1;
+  selectedId = null;
+  document.getElementById('modeBtnSubject').classList.toggle('active', isSubject);
+  document.getElementById('modeBtnAccessory').classList.toggle('active', !isSubject);
+  applyManualStageImage();
+  syncOrigThumbsActiveClass();
+  if (curState === 3) {
+    updateCanvasHint3();
+    if (isMultiBboxUpload()) updateLinearCaption();
+  }
+  if (previewEl) {
+    const c = isSubject ? '#3b82f6' : '#f59e0b';
+    previewEl.setAttribute('stroke', c);
+    previewEl.setAttribute('fill', c + '14');
+  }
+  renderAll();
+  syncSidebar();
+}
+
+/* ════ PLACE BOX ════ */
+function placeBox(cx, cy) {
+  const isAccessory = bboxMode === 'accessory';
+  const imgIdx = activeImageIndex;
+  if (!isAccessory && imgIdx !== 0) return;
+  if (isAccessory && imgIdx < 1) return;
+
+  // Subject: only one allowed on primary image — replace if exists
+  if (!isAccessory) {
+    const existing = boxes.find(b => b.mode === 'subject' && b.imageIndex === 0);
+    if (existing) {
+      existing.x = cx - DEFAULT_W / 2;
+      existing.y = cy - DEFAULT_H / 2;
+      existing.w = DEFAULT_W;
+      existing.h = DEFAULT_H;
+      existing.aiSuggested = false;
+      selectedId = existing.id;
+      renderAll();
+      syncSidebar();
+      return;
+    }
+  }
+
+  const id = nextId++;
+  const palette = isAccessory ? ACCESSORY_COLORS : SUBJECT_COLORS;
+  const sameSlot = isAccessory
+    ? boxes.filter(b => b.mode === 'accessory' && b.imageIndex === imgIdx)
+    : boxes.filter(b => b.mode === 'subject' && b.imageIndex === 0);
+  const color = palette[sameSlot.length % palette.length];
+  const label = isAccessory ? `Accessory ${sameSlot.length + 1}` : 'Subject';
+  const b = {
+    id, mode: bboxMode,
+    imageIndex: isAccessory ? imgIdx : 0,
+    x: cx - DEFAULT_W / 2,
+    y: cy - DEFAULT_H / 2,
+    w: DEFAULT_W,
+    h: DEFAULT_H,
+    color, label,
+    aiSuggested: false
+  };
+  boxes.push(b);
+  selectedId = id;
+  renderAll();
+  syncSidebar();
+}
+
+/* ════ RESIZE MATH ════ */
+const HANDLE_DIRS = [
+  { id:'tl', fx:(b)=>b.x,       fy:(b)=>b.y,       cur:'nwse-resize' },
+  { id:'tc', fx:(b)=>b.x+b.w/2, fy:(b)=>b.y,       cur:'ns-resize'   },
+  { id:'tr', fx:(b)=>b.x+b.w,   fy:(b)=>b.y,       cur:'nesw-resize' },
+  { id:'ml', fx:(b)=>b.x,       fy:(b)=>b.y+b.h/2, cur:'ew-resize'   },
+  { id:'mr', fx:(b)=>b.x+b.w,   fy:(b)=>b.y+b.h/2, cur:'ew-resize'   },
+  { id:'bl', fx:(b)=>b.x,       fy:(b)=>b.y+b.h,   cur:'nesw-resize' },
+  { id:'bc', fx:(b)=>b.x+b.w/2, fy:(b)=>b.y+b.h,   cur:'ns-resize'   },
+  { id:'br', fx:(b)=>b.x+b.w,   fy:(b)=>b.y+b.h,   cur:'nwse-resize' },
+];
+
+function applyResize(orig, dir, dx, dy) {
+  let {x, y, w, h} = orig;
+  switch (dir) {
+    case 'tl': x+=dx; y+=dy; w-=dx; h-=dy; break;
+    case 'tc':         y+=dy;        h-=dy; break;
+    case 'tr':         y+=dy; w+=dx; h-=dy; break;
+    case 'ml': x+=dx;        w-=dx;         break;
+    case 'mr':               w+=dx;         break;
+    case 'bl': x+=dx;        w-=dx; h+=dy;  break;
+    case 'bc':                      h+=dy;  break;
+    case 'br':               w+=dx; h+=dy;  break;
+  }
+  // Clamp size
+  if (w < MIN_BOX) { if (['tl','ml','bl'].includes(dir)) x = orig.x + orig.w - MIN_BOX; w = MIN_BOX; }
+  if (h < MIN_BOX) { if (['tl','tc','tr'].includes(dir)) y = orig.y + orig.h - MIN_BOX; h = MIN_BOX; }
+  return { x, y, w: Math.max(MIN_BOX, w), h: Math.max(MIN_BOX, h) };
+}
+
+/* ════ RENDER ALL BOXES ════ */
+function renderAll() {
+  // Remove old rendered groups
+  bboxLayer.querySelectorAll('.bgrp').forEach(el => el.remove());
+
+  boxes.filter(b => b.imageIndex === activeImageIndex).forEach(b => {
+    const isSel = b.id === selectedId;
+    const g = svg('g', { class: 'bgrp' });
+
+    // Invisible hit area (slightly larger than box, for easier clicking)
+    const hit = svg('rect', {
+      x: b.x - 4, y: b.y - 4, width: b.w + 8, height: b.h + 8,
+      fill: 'transparent', 'data-role': 'body', 'data-id': b.id
+    }, { cursor: 'move' });
+    g.appendChild(hit);
+
+    const box = svg('rect', {
+      x: b.x, y: b.y, width: b.w, height: b.h, rx: 5,
+      fill: b.color + (isSel ? '1e' : '0d'),
+      stroke: b.color,
+      'stroke-width': isSel ? 2.5 : 1.8,
+    }, { pointerEvents: 'none' });
+    g.appendChild(box);
+
+    // Label badge
+    const labelShown = b.label;
+    const LW = Math.max(70, Math.min(118, 8 + labelShown.length * 6.2)), LH = 20;
+    const lbg = svg('rect', { x: b.x+5, y: b.y+5, width: LW, height: LH, rx: 5, fill: b.color }, { pointerEvents: 'none' });
+    g.appendChild(lbg);
+    const ltxt = svg('text', {
+      x: b.x+5+LW/2, y: b.y+18,
+      fill: '#fff', 'font-size': 11, 'font-family': '-apple-system,sans-serif',
+      'font-weight': 600, 'text-anchor': 'middle'
+    }, { pointerEvents: 'none' });
+    ltxt.textContent = labelShown;
+    g.appendChild(ltxt);
+
+    if (isSel) {
+      // Resize handles
+      HANDLE_DIRS.forEach(hd => {
+        const hx = hd.fx(b), hy = hd.fy(b);
+        const hcirc = svg('circle', {
+          cx: hx, cy: hy, r: HANDLE_SIZE,
+          fill: '#fff', stroke: b.color, 'stroke-width': 2,
+          'data-role': 'resize', 'data-id': b.id, 'data-dir': hd.id
+        }, { cursor: hd.cur, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.15))' });
+        g.appendChild(hcirc);
+      });
+
+      // Delete button (top-right corner, offset outward)
+      const dx = b.x + b.w + 2, dy = b.y - 2;
+      const dcirc = svg('circle', {
+        cx: dx, cy: dy, r: 10,
+        fill: '#ef4444', 'data-role': 'delete', 'data-id': b.id
+      }, { cursor: 'pointer' });
+      const dtxt = svg('text', {
+        x: dx, y: dy + 5, fill: '#fff',
+        'font-size': 14, 'font-family': 'sans-serif',
+        'text-anchor': 'middle'
+      }, { pointerEvents: 'none' });
+      dtxt.textContent = '×';
+      g.appendChild(dcirc);
+      g.appendChild(dtxt);
+    }
+
+    bboxLayer.appendChild(g);
+  });
+
+  // Update slider & erase btn
+  updateToolbar();
+}
+
+function updateToolbar() {
+  const box = boxes.find(b => b.id === selectedId && b.imageIndex === activeImageIndex);
+  slider.disabled = !box;
+  if (box) {
+    const v = Math.round(box.w);
+    slider.value = Math.min(280, Math.max(40, v));
+    // Update slider fill track
+    const pct = ((slider.value - 40) / (280 - 40) * 100).toFixed(1) + '%';
+    slider.style.setProperty('--pct', pct);
+  }
+}
+
+/* ════ MOUSE DOWN ════ */
+bboxLayer.addEventListener('mousedown', e => {
+  if (curState !== 3) return;
+  const p = layerPt(e);
+  const role = e.target.getAttribute('data-role');
+  const id = parseInt(e.target.getAttribute('data-id'));
+
+  if (role === 'delete') {
+    e.stopPropagation();
+    removeBox(id);
+    return;
+  }
+
+  if (role === 'resize') {
+    e.preventDefault();
+    e.stopPropagation();
+    selectedId = id;
+    const b = boxes.find(b => b.id === id);
+    drag = { mode: 'resize', id, dir: e.target.getAttribute('data-dir'), sx: p.x, sy: p.y, orig: {...b} };
+    hidePreview();
+    renderAll();
+    return;
+  }
+
+  if (role === 'body') {
+    e.preventDefault();
+    e.stopPropagation();
+    selectedId = id;
+    const b = boxes.find(b => b.id === id);
+    drag = { mode: 'move', id, sx: p.x, sy: p.y, ox: b.x, oy: b.y };
+    hidePreview();
+    bboxLayer.style.cursor = 'grabbing';
+    renderAll();
+    return;
+  }
+
+  // Click on empty area (SVG root or transparent bg rect) → place box
+  if (e.target === bboxLayer || e.target.id === 'bboxBg') {
+    hidePreview();
+    placeBox(p.x, p.y);
+  }
+});
+
+/* ════ MOUSE MOVE (window) ════ */
+window.addEventListener('mousemove', e => {
+  if (curState !== 3) return;
+  const p = layerPt(e);
+
+  if (drag) {
+    if (drag.mode === 'move') {
+      const dx = p.x - drag.sx, dy = p.y - drag.sy;
+      const b = boxes.find(b => b.id === drag.id);
+      if (b) { b.x = drag.ox + dx; b.y = drag.oy + dy; }
+      renderAll();
+    } else if (drag.mode === 'resize') {
+      const dx = p.x - drag.sx, dy = p.y - drag.sy;
+      const b = boxes.find(b => b.id === drag.id);
+      if (b) {
+        const r = applyResize(drag.orig, drag.dir, dx, dy);
+        b.x = r.x; b.y = r.y; b.w = r.w; b.h = r.h;
+      }
+      renderAll();
+    }
+    return;
+  }
+
+  // Hover preview — only when no box selected, no drag, and cursor is on empty layer area
+  if (!selectedId) {
+    const isEmptyArea = (e.target === bboxLayer || e.target.id === 'bboxBg');
+    const cr = bboxLayer.getBoundingClientRect();
+    const inBounds = e.clientX >= cr.left && e.clientX <= cr.right &&
+                     e.clientY >= cr.top && e.clientY <= cr.bottom;
+    if (isEmptyArea && inBounds) {
+      showPreview(p.x, p.y);
+    } else if (!inBounds) {
+      hidePreview();
+    } else {
+      // Over an existing bbox element — hide preview
+      hidePreview();
+    }
+  }
+});
+
+/* ════ MOUSE UP ════ */
+window.addEventListener('mouseup', e => {
+  if (!drag) return;
+  if (curState === 3) {
+    const b = boxes.find(x => x.id === drag.id);
+    if (b) b.aiSuggested = false;
+  }
+  drag = null;
+  bboxLayer.style.cursor = 'crosshair';
+  syncSidebar();
+});
+
+/* ════ CLICK ════ — deselect when clicking empty area */
+bboxLayer.addEventListener('click', e => {
+  if (curState !== 3) return;
+  if (e.target === bboxLayer || e.target.id === 'bboxBg') {
+    if (selectedId !== null) {
+      selectedId = null;
+      renderAll();
+      syncSidebar();
+    }
+  }
+});
+
+/* ════ MOUSE LEAVE canvas ════ */
+bboxLayer.addEventListener('mouseleave', () => { if (!drag) hidePreview(); });
+
+/* ════ KEYBOARD ════ */
+document.addEventListener('keydown', e => {
+  if (curState !== 3) return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId !== null) {
+    e.preventDefault();
+    eraseSelected();
+  }
+  if (e.key === 'Escape') {
+    selectedId = null;
+    renderAll();
+    syncSidebar();
+  }
+});
+
+/* ════ SLIDER ════ */
+slider.addEventListener('input', () => {
+  const b = boxes.find(b => b.id === selectedId && b.imageIndex === activeImageIndex);
+  if (!b) return;
+  b.aiSuggested = false;
+  const newW = parseInt(slider.value);
+  const ratio = b.h / b.w;
+  const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  b.w = newW;
+  b.h = Math.round(newW * ratio);
+  b.x = cx - b.w / 2;
+  b.y = cy - b.h / 2;
+  const pct = ((slider.value - 40) / (280 - 40) * 100).toFixed(1) + '%';
+  slider.style.setProperty('--pct', pct);
+  renderAll();
+  syncSidebar();
+});
+
+/* ════ SIDEBAR SYNC ════ */
+function renderBoxList(containerEl, subset) {
+  containerEl.innerHTML = '';
+  subset.forEach(b => {
+    const item = document.createElement('div');
+    item.className = 'bbox-item' + (b.id === selectedId ? ' selected' : '');
+    item.dataset.id = b.id;
+    const imgNote = b.mode === 'accessory' ? ` · 图${b.imageIndex + 1}` : '';
+    const cn = b.mode === 'subject' ? '主体' : (`配件${imgNote}`);
+    item.innerHTML = `
+      <div class="bbox-swatch" style="background:${b.color}"></div>
+      <span class="bbox-item-name">${b.label}<span class="proto-anno proto-anno--inline">${cn}</span></span>
+      <span class="bbox-item-size">${Math.round(b.w)}×${Math.round(b.h)}</span>
+      <div class="bbox-item-del" data-did="${b.id}">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    `;
+    item.addEventListener('click', ev => {
+      if (ev.target.closest('[data-did]')) {
+        removeBox(parseInt(ev.target.closest('[data-did]').dataset.did));
+        return;
+      }
+      if (b.imageIndex !== activeImageIndex) {
+        activeImageIndex = b.imageIndex;
+        bboxMode = b.mode;
+        document.getElementById('modeBtnSubject').classList.toggle('active', b.mode === 'subject');
+        document.getElementById('modeBtnAccessory').classList.toggle('active', b.mode === 'accessory');
+        applyManualStageImage();
+        syncOrigThumbsActiveClass();
+        if (curState === 3) updateCanvasHint3();
+        if (previewEl) {
+          const c = b.mode === 'subject' ? '#3b82f6' : '#f59e0b';
+          previewEl.setAttribute('stroke', c);
+          previewEl.setAttribute('fill', c + '14');
+        }
+      }
+      selectedId = b.id;
+      renderAll();
+      if (curState === 3 && isMultiBboxUpload()) updateLinearCaption();
+      syncSidebar();
+    });
+    containerEl.appendChild(item);
+  });
+}
+
+function subjectBoxesOk() {
+  return boxes.some(b => b.mode === 'subject' && b.imageIndex === 0);
+}
+
+function allAccessoryStepsResolved() {
+  if (UPLOAD_IMAGES.length <= 1) return true;
+  for (let i = 1; i < UPLOAD_IMAGES.length; i++) {
+    if (!boxes.some(b => b.mode === 'accessory' && b.imageIndex === i)) return false;
+  }
+  return true;
+}
+
+function syncSidebar() {
+  const subjects   = boxes.filter(b => b.mode === 'subject' && b.imageIndex === 0);
+  const accessories = boxes.filter(b => b.mode === 'accessory');
+
+  // Subject badge
+  const subjectBadge = document.getElementById('subjectCountBadge');
+  const subjectText  = document.getElementById('subjectCountText');
+  if (subjects.length === 0) {
+    subjectBadge.className = 'bbox-count-badge empty';
+    subjectBadge.style.cssText = 'margin-bottom:0;flex:1;';
+    subjectText.innerHTML = 'No subject selected<span class="proto-anno proto-anno--inline">主体未选择</span>';
+  } else {
+    subjectBadge.className = 'bbox-count-badge';
+    subjectBadge.style.cssText = 'margin-bottom:0;flex:1;';
+    subjectText.innerHTML = 'Subject selected<span class="proto-anno proto-anno--inline">主体已选择</span>';
+  }
+  renderBoxList(document.getElementById('subjectItems'), subjects);
+
+  // Accessory badge
+  const accBadge = document.getElementById('accessoryCountBadge');
+  const accText  = document.getElementById('accessoryCountText');
+  if (accessories.length === 0) {
+    accBadge.className = 'bbox-count-badge empty';
+    accBadge.style.cssText = 'margin-bottom:0;flex:1;border-color:#fde68a;color:#92400e;background:#fffbeb;';
+    accText.innerHTML = 'Accessories<span class="proto-anno proto-anno--inline">配件</span>';
+  } else {
+    accBadge.className = 'bbox-count-badge';
+    accBadge.style.cssText = 'margin-bottom:0;flex:1;border-color:#fde68a;color:#92400e;background:#fffbeb;';
+    accText.innerHTML = `${accessories.length} accessory${accessories.length === 1 ? '' : 'ies'}<span class="proto-anno proto-anno--inline">配件 ${accessories.length} 个</span>`;
+  }
+  renderBoxList(document.getElementById('accessoryItems'), accessories);
+
+  document.getElementById('useBtn').disabled = !(subjectBoxesOk() && allAccessoryStepsResolved());
+  updateBboxNavButtons();
+}
+
+/* ════ UTILITIES ════ */
+function relabelAccessories() {
+  const byIdx = {};
+  boxes.filter(b => b.mode === 'accessory').forEach(b => {
+    if (!byIdx[b.imageIndex]) byIdx[b.imageIndex] = [];
+    byIdx[b.imageIndex].push(b);
+  });
+  Object.keys(byIdx).map(Number).sort((a, b) => a - b).forEach(k => {
+    byIdx[k].forEach((b, i) => { b.label = `Accessory ${i + 1}`; });
+  });
+}
+
+function removeBox(id) {
+  boxes = boxes.filter(b => b.id !== id);
+  if (selectedId === id) selectedId = null;
+  relabelAccessories();
+  renderAll();
+  syncSidebar();
+}
+
+function eraseSelected() {
+  if (selectedId !== null) removeBox(selectedId);
+}
+
+function clearAllBoxes() {
+  boxes = []; nextId = 1; selectedId = null;
+  activeImageIndex = 0;
+  bboxMode = 'subject';
+  document.getElementById('modeBtnSubject').classList.add('active');
+  document.getElementById('modeBtnAccessory').classList.remove('active');
+  applyManualStageImage();
+  syncOrigThumbsActiveClass();
+  if (previewEl) {
+    previewEl.setAttribute('stroke', '#3b82f6');
+    previewEl.setAttribute('fill', '#3b82f614');
+  }
+  renderAll(); syncSidebar();
+}
+
+function confirmSubject() {
+  if (!(subjectBoxesOk() && allAccessoryStepsResolved())) return;
+  clearAllBoxes();
+  goState(4);
+}
+
+/* ════ INIT ════ */
+/* ════════════════════ AUTO PROCESS & ADVANCED MODE ════════════════════ */
+let autoProcess = true;
+let advancedMode = false;
+let advTimers = [];
+let advAccNextId = 1;
+let advAccList = []; // [{id}]
+
+function advAccSrc() {
+  if (UPLOAD_IMAGES.length <= 1) return UPLOAD_IMAGES[0];
+  if (advAccList.length < 1) return UPLOAD_IMAGES[0];
+  const span = UPLOAD_IMAGES.length - 1;
+  const k = ((advAccList.length - 1) % span + span) % span;
+  return UPLOAD_IMAGES[1 + k];
+}
+
+function setAdvModeFromSelect() {
+  advancedMode = document.getElementById('advModeSel').value === 'advanced';
+  if (!advancedMode) {
+    document.getElementById('advSection').classList.remove('show');
+  } else if (curState === 4) {
+    document.getElementById('advSection').classList.add('show');
+    onState4();
+  }
+}
+
+function syncAutoProcessToggle() {
+  const btn = document.getElementById('autoProcessToggle');
+  if (!btn) return;
+  btn.classList.toggle('on', autoProcess);
+  btn.setAttribute('aria-pressed', autoProcess ? 'true' : 'false');
+}
+document.getElementById('autoProcessToggle').addEventListener('click', function () {
+  autoProcess = !autoProcess;
+  syncAutoProcessToggle();
+});
+document.getElementById('advModeSel').addEventListener('change', setAdvModeFromSelect);
+syncAutoProcessToggle();
+
+/* ── Called when state reaches 4 — trigger backfill if advanced ON ── */
+function onState4() {
+  if (!advancedMode) return;
+  // Reset and show section
+  resetAdvSection();
+  document.getElementById('advSection').classList.add('show');
+  // Start backfill sequence
+  advTimers.forEach(clearTimeout); advTimers = [];
+  // Step 1: Primary recognition (scan → fill)
+  const primaryThumb = document.getElementById('advPrimaryThumb');
+  primaryThumb.classList.add('recognizing');
+
+  advTimers.push(setTimeout(() => {
+    const img = document.getElementById('advPrimaryImg');
+    img.src = UPLOAD_IMAGES[0];
+    primaryThumb.classList.remove('recognizing');
+    primaryThumb.classList.add('filled');
+    primaryThumb.classList.add('just-filled');
+    setTimeout(() => primaryThumb.classList.remove('just-filled'), 700);
+  }, 1000));
+
+  // Step 2: Add one accessory thumb + scan → fill
+  advTimers.push(setTimeout(() => {
+    const accId = advAccNextId++;
+    advAccList.push({ id: accId });
+    const thumb = createAccThumb(accId);
+    const addBtn = document.getElementById('advAccAddBtn');
+    document.getElementById('advAccRow').insertBefore(thumb, addBtn);
+    // Start recognition on the new thumb
+    thumb.classList.add('recognizing');
+    advTimers.push(setTimeout(() => {
+      const img = thumb.querySelector('img');
+      img.src = advAccSrc();
+      thumb.classList.remove('recognizing');
+      thumb.classList.add('filled');
+    }, 1200));
+  }, 1600));
+}
+
+function createAccThumb(id) {
+  const thumb = document.createElement('div');
+  thumb.className = 'adv-acc-thumb';
+  thumb.id = `advAcc-${id}`;
+  thumb.innerHTML = `
+    <div class="adv-acc-scan-line"></div>
+    <img src="" alt="Accessory"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" stroke-width="1.5" class="adv-ph-icon"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+  `;
+  return thumb;
+}
+
+function advAddAcc() {
+  const id = advAccNextId++;
+  advAccList.push({ id });
+  const thumb = createAccThumb(id);
+  document.getElementById('advAccRow').insertBefore(thumb, document.getElementById('advAccAddBtn'));
+  // Simulate recognition
+  thumb.classList.add('recognizing');
+  setTimeout(() => {
+    const img = thumb.querySelector('img');
+    img.src = advAccSrc();
+    thumb.classList.remove('recognizing');
+    thumb.classList.add('filled');
+  }, 1200);
+}
+
+function resetAdvSection() {
+  // Primary thumb
+  const pt = document.getElementById('advPrimaryThumb');
+  pt.classList.remove('filled', 'recognizing', 'just-filled');
+  document.getElementById('advPrimaryImg').src = '';
+  // Accessories
+  advAccList = [];
+  advAccNextId = 1;
+  document.getElementById('advAccRow').querySelectorAll('.adv-acc-thumb').forEach(el => el.remove());
+}
+
+/* ════ ADD INFO MODAL (disabled in DOM; stubs keep calls safe) ════ */
+let _modalAccId = null;
+
+function openAddInfoModal(/* accId */) { /* hidden */ }
+
+function closeAddInfoModal() {
+  _modalAccId = null;
+  const m = document.getElementById('addInfoModal');
+  if (m) m.classList.add('hidden');
+}
+
+function confirmAddInfo() {
+  closeAddInfoModal();
+}
+
+(function () {
+  const m = document.getElementById('addInfoModal');
+  if (m) m.addEventListener('click', e => {
+    if (e.target === m) closeAddInfoModal();
+  });
+})();
+
+syncPrimaryStageImages();
+applyManualStageImage();
+renderOrigThumbs();
+updateSs1Lead();
+goState(1);
+startProcAnimation();
+</script>
+</body>
+</html>

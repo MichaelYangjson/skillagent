@@ -152,6 +152,57 @@ body {
 }
 .bt-sep { width: 1px; height: 28px; background: #f0f0f0; margin: 0 4px; }
 
+/* ── Image thumbnail strip (multi-image bbox, state 3) ── */
+#imgStrip {
+  position: absolute;
+  bottom: 136px; left: 50%;
+  transform: translateX(-50%);
+  display: none; gap: 10px; align-items: flex-end;
+  background: rgba(255,255,255,0.97);
+  border: 1px solid #e5e5e5; border-radius: 18px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.11);
+  backdrop-filter: blur(12px); z-index: 25;
+}
+#imgStrip.show { display: flex; }
+.strip-thumb-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer;
+}
+.strip-thumb {
+  width: 54px; height: 54px; border-radius: 10px;
+  overflow: hidden; position: relative;
+  border: 2.5px solid #e8e8e8;
+  transition: border-color .15s, box-shadow .15s;
+  background: #f5f5f5; flex-shrink: 0;
+}
+.strip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.strip-thumb.active { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+.strip-thumb-wrap:hover .strip-thumb:not(.active) { border-color: #bbb; }
+.strip-check {
+  position: absolute; bottom: 3px; right: 3px;
+  width: 17px; height: 17px; background: #22c55e;
+  border-radius: 50%; display: none; align-items: center; justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.strip-thumb.done .strip-check { display: flex; }
+.strip-label { font-size: 9.5px; color: #aaa; font-weight: 500; text-align: center; white-space: nowrap; }
+.strip-label.active-lbl { color: #3b82f6; font-weight: 600; }
+
+/* Done button embedded in bottom toolbar */
+.bt-done-btn {
+  background: #1a1a1a; color: #fff; border: none;
+  border-radius: 10px; padding: 7px 16px;
+  font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: background .15s, opacity .15s;
+  font-family: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.2;
+  white-space: nowrap;
+}
+.bt-done-btn .proto-anno { font-size: 8px; color: rgba(255,255,255,.6); }
+.bt-done-btn:hover:not(:disabled) { background: #333; }
+.bt-done-btn:disabled { background: #e0e0e0; color: #b0b0b0; cursor: not-allowed; }
+
 /* Size panel */
 .bt-size-wrap {
   display: flex; align-items: center; gap: 10px; padding: 0 4px;
@@ -746,6 +797,9 @@ body {
       <rect id="bboxBg" width="100%" height="100%" fill="transparent" style="pointer-events:all;"/>
     </svg>
 
+    <!-- Thumbnail strip (multi-image, state 3) -->
+    <div id="imgStrip"></div>
+
     <!-- Bottom BBox Toolbar (state 3) -->
     <div id="bboxToolbar">
       <!-- Role caption: single = primary only; multi = linear step (no mode tabs) -->
@@ -770,10 +824,14 @@ body {
           <div class="bt-tool-dot" id="modeAccessoryDot" style="background:#f59e0b;"></div>
         </div>
       </div>
-      <!-- Right: size + erase -->
+      <!-- Right: size + done -->
       <div class="bt-card bt-size-wrap">
         <span class="bt-size-label">Box size<span class="proto-anno proto-anno--inline">选框大小</span></span>
         <input type="range" class="bt-slider" id="bboxSizeSlider" min="40" max="280" value="120" disabled>
+        <div class="bt-sep"></div>
+        <button class="bt-done-btn" id="stripDoneBtn" onclick="confirmSubjectFromStrip()" disabled>
+          Done<span class="proto-anno proto-anno--block">完成</span>
+        </button>
       </div>
     </div>
   </main>
@@ -1004,9 +1062,10 @@ function goState(n) {
     hint.classList.remove('show');
   }
 
-  // BBox layer + toolbar
+  // BBox layer + toolbar + thumbnail strip
   const layer = document.getElementById('bboxLayer');
   const toolbar = document.getElementById('bboxToolbar');
+  const strip = document.getElementById('imgStrip');
 
   if (n === 3) {
     layer.classList.add('active');
@@ -1014,6 +1073,7 @@ function goState(n) {
   } else {
     layer.classList.remove('active');
     toolbar.classList.remove('show');
+    if (strip) strip.classList.remove('show');
   }
 
   if (n === 1) startProcAnimation();
@@ -1230,7 +1290,7 @@ function bboxStepPrev() {
   applyBboxStepIndex(activeImageIndex - 1);
 }
 
-/** Single-image: hide accessory UI; multi-image: linear captions + nav. */
+/** Single-image: hide accessory UI; multi-image: thumbnail strip replaces prev/next nav. */
 function syncManualBoxChrome() {
   const multi = isMultiBboxUpload();
 
@@ -1245,16 +1305,22 @@ function syncManualBoxChrome() {
   }
   if (multi) updateLinearCaption();
 
+  // Multi-image: sidebar prev/next hidden — thumbnail strip + toolbar Done replaces them
+  const navRow = document.getElementById('bboxNavRow');
+  if (navRow) navRow.style.display = multi ? 'none' : 'flex';
+
   const hint = document.getElementById('bboxKbdHint');
   if (hint) {
     if (multi) {
-      hint.innerHTML = `Previous / Next in panel · primary = required · accessories = multiple · <kbd>Del</kbd> remove<span class="proto-anno proto-anno--block">使用侧栏上一步/下一步 · 主商品必选 · 配件可多框 · Del 删除</span>`;
+      hint.innerHTML = `Click thumbnail to switch image · drag to adjust · <kbd>Del</kbd> remove<span class="proto-anno proto-anno--block">点击下方缩略图切换图片 · 拖拽调整框 · Del 删除</span>`;
     } else {
       hint.innerHTML = `Adjust box · drag · <kbd>Del</kbd> remove<span class="proto-anno proto-anno--block">调整选框 · 拖拽 · Del 删除</span>`;
     }
   }
 
   updateBboxNavButtons();
+  renderThumbnailStrip();
+  updateStripDoneBtn();
 }
 
 /* ════════════════════ BBOX INTERACTION ════════════════════ */
@@ -1789,6 +1855,60 @@ function syncSidebar() {
   );
 
   updateBboxNavButtons();
+  renderThumbnailStrip();
+  updateStripDoneBtn();
+}
+
+/* ════ THUMBNAIL STRIP ════ */
+function renderThumbnailStrip() {
+  const strip = document.getElementById('imgStrip');
+  if (!strip) return;
+  if (!isMultiBboxUpload() || curState !== 3) {
+    strip.classList.remove('show');
+    return;
+  }
+  strip.classList.add('show');
+  strip.innerHTML = '';
+  UPLOAD_IMAGES.forEach((src, idx) => {
+    const isDone = idx === 0 ? subjectBoxesOk() : accessoryBoxesOk(idx);
+    const isActive = idx === activeImageIndex;
+    const wrap = document.createElement('div');
+    wrap.className = 'strip-thumb-wrap';
+    wrap.title = idx === 0 ? 'Primary · 主商品' : `Accessory ${idx} · 配件${idx}`;
+
+    const thumb = document.createElement('div');
+    thumb.className = 'strip-thumb' + (isActive ? ' active' : '') + (isDone ? ' done' : '');
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = idx === 0 ? 'Primary' : `Accessory ${idx}`;
+    thumb.appendChild(img);
+
+    const check = document.createElement('div');
+    check.className = 'strip-check';
+    check.innerHTML = '<svg width="10" height="10" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+    thumb.appendChild(check);
+
+    const label = document.createElement('span');
+    label.className = 'strip-label' + (isActive ? ' active-lbl' : '');
+    label.textContent = idx === 0 ? 'Primary' : `Acc ${idx}`;
+
+    wrap.appendChild(thumb);
+    wrap.appendChild(label);
+    wrap.addEventListener('click', () => applyBboxStepIndex(idx));
+    strip.appendChild(wrap);
+  });
+}
+
+function updateStripDoneBtn() {
+  const btn = document.getElementById('stripDoneBtn');
+  if (!btn) return;
+  btn.disabled = !subjectBoxesOk();
+}
+
+function confirmSubjectFromStrip() {
+  if (!subjectBoxesOk()) return;
+  goState(4);
 }
 
 /* ════ UTILITIES ════ */

@@ -23,8 +23,6 @@ body {
 }
 .proto-anno--inline { margin-left: 4px; white-space: nowrap; }
 .proto-anno--block { display: block; margin-top: 4px; }
-.bt-tool.active .proto-anno { color: rgba(255,255,255,.58); }
-.bt-tool:not(.active) .proto-anno { color: #b4b4b4; }
 .canvas-hint .hint-main { display: block; font-size: 12px; color: #444; font-weight: 500; }
 .canvas-hint .proto-anno--block { margin-top: 5px; font-size: 10px; color: #94a3b8; font-weight: 400; }
 .proc-label .proto-anno--block { margin-top: 5px; font-size: 10px; color: #4a6080; font-weight: 400; }
@@ -76,20 +74,35 @@ body {
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
 }
+/* State 3: allow vertical scroll if cards overflow */
+.canvas.state3 { overflow-y: auto; align-items: flex-start; }
 
 /* Canvas hint */
 .canvas-hint {
-  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  position: sticky; top: 16px; left: 50%; transform: translateX(-50%);
   background: rgba(255,255,255,0.94); border: 1px solid #e5e5e5;
   border-radius: 20px; padding: 5px 16px; font-size: 12px; color: #666;
   z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
   pointer-events: none; opacity: 0; transition: opacity .25s;
   white-space: normal; max-width: min(520px, 92vw); text-align: center; line-height: 1.35;
+  align-self: flex-start; margin-top: 16px; flex-shrink: 0;
 }
 .canvas-hint.show { opacity: 1; }
 
-/* Cards */
+/* ── State 1/2/4 card layout ── */
 .cards-wrap { display: flex; gap: 20px; align-items: center; position: relative; z-index: 2; }
+
+/* ── State 3: multi-card bbox layout ── */
+#cs3 {
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 52px 24px 24px;
+  width: 100%;
+  min-height: 100%;
+}
+
 .pcard {
   width: 210px; height: 210px; border-radius: 14px; overflow: hidden; position: relative;
   background: #fff; flex-shrink: 0;
@@ -98,7 +111,37 @@ body {
   transition: box-shadow .2s;
 }
 .pcard:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.06); }
-.pcard.bbox-target { box-shadow: 0 0 0 2.5px #3b82f6, 0 4px 24px rgba(59,130,246,0.2); }
+
+/* State 3 card: slightly smaller so 3 fit easily */
+#cs3 .pcard {
+  width: 190px; height: 190px;
+}
+
+/* Card focus ring when a box on that card is selected */
+.pcard.bbox-card-focus {
+  box-shadow: 0 0 0 2.5px #3b82f6, 0 4px 24px rgba(59,130,246,0.2) !important;
+}
+
+/* Per-card SVG overlay */
+.bbox-card-layer {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  cursor: crosshair;
+  user-select: none;
+  z-index: 8;
+}
+
+/* Card role label at bottom */
+.bbox-card-label {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 18px 8px 7px;
+  font-size: 10px; font-weight: 600; color: #fff;
+  background: linear-gradient(to top, rgba(0,0,0,.45) 0%, transparent 100%);
+  pointer-events: none; z-index: 9;
+  border-radius: 0 0 14px 14px;
+  text-align: center; letter-spacing: .01em;
+}
+.bbox-card-label .proto-anno { color: rgba(255,255,255,.6); display: inline; margin-left: 4px; font-size: 9px; }
 
 /* Processing overlay */
 .proc-overlay {
@@ -114,20 +157,10 @@ body {
 .proc-bar-wrap { width: 80px; height: 3px; background: rgba(255,255,255,0.5); border-radius: 2px; overflow: hidden; }
 .proc-bar { height: 100%; background: #5090d0; border-radius: 2px; width: 0%; transition: width .4s ease; }
 
-/* BBox SVG layer */
-#bboxLayer {
-  position: absolute; inset: 0; z-index: 10;
-  width: 100%; height: 100%;
-  cursor: crosshair; display: none;
-  user-select: none;
-  pointer-events: all;
-}
-#bboxLayer.active { display: block; }
-
-/* ═══ BOTTOM BBOX TOOLBAR ═══ */
+/* ═══ BOTTOM BBOX TOOLBAR (state 3) ═══ */
 #bboxToolbar {
-  position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%);
-  display: none; align-items: stretch; gap: 8px; z-index: 30;
+  position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%);
+  display: none; align-items: stretch; gap: 8px; z-index: 9500;
 }
 #bboxToolbar.show { display: flex; }
 
@@ -139,18 +172,6 @@ body {
   padding: 8px 10px;
   backdrop-filter: blur(10px);
 }
-.bt-tool {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 5px 8px; border-radius: 10px; cursor: pointer;
-  color: #aaa; font-size: 10.5px; transition: all .15s; min-width: 42px;
-}
-.bt-tool.active { background: #1a1a1a; color: #fff; }
-.bt-tool svg { flex-shrink: 0; }
-.bt-tool-dot {
-  width: 4px; height: 4px; border-radius: 50%;
-  background: #3b82f6; margin-top: 1px;
-}
-.bt-sep { width: 1px; height: 28px; background: #f0f0f0; margin: 0 4px; }
 
 /* Size panel */
 .bt-size-wrap {
@@ -182,16 +203,6 @@ body {
 .bt-slider:disabled { opacity: 0.4; cursor: not-allowed; }
 .bt-slider:disabled::-webkit-slider-thumb { border-color: #ccc; box-shadow: none; }
 
-.bt-erase {
-  background: #1a1a1a; color: #fff; border: none;
-  border-radius: 10px; padding: 7px 16px;
-  font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: background .15s, opacity .15s;
-  white-space: nowrap; font-family: inherit;
-}
-.bt-erase:hover:not(:disabled) { background: #333; }
-.bt-erase:disabled { opacity: 0.35; cursor: not-allowed; }
-
 /* State visibility */
 .cs { display: none; }
 .cs.active { display: flex; animation: fadeIn .25s ease; }
@@ -219,7 +230,7 @@ body {
 .rp-sec { padding: 14px 16px; border-bottom: 1px solid #f5f5f5; flex-shrink: 0; }
 .rp-lbl { font-size: 11.5px; color: #c0c0c0; margin-bottom: 10px; }
 
-/* State 3: manual bbox panel */
+/* ── State 3 sidebar styles ── */
 .ss3-panel { display: flex; flex-direction: column; gap: 0; }
 .ss3-ai-unclear {
   display: flex; align-items: flex-start; gap: 10px;
@@ -230,7 +241,7 @@ body {
   font-size: 12px;
   color: #713f12;
   line-height: 1.5;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   box-shadow: 0 1px 2px rgba(180, 83, 9, 0.06);
 }
 .ss3-ai-unclear-icon {
@@ -246,40 +257,47 @@ body {
 .ss3-ai-unclear strong { color: #92400e; font-weight: 600; }
 .ss3-ai-unclear .proto-anno--block { margin-top: 6px; color: #a16207; font-weight: 400; line-height: 1.45; }
 
-.ss3-block { margin-bottom: 14px; }
-.ss3-block:last-of-type { margin-bottom: 0; }
-.ss3-section-head {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-bottom: 8px;
+/* State 3: sidebar image rows (thumbnails + role only, no counts) */
+.ss3-img-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.ss3-img-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 9px; border-radius: 10px;
+  background: #fafafa; border: 1px solid #f0f0f0;
+  font-size: 12px; transition: background .12s, border-color .12s;
+  cursor: pointer;
 }
-.ss3-section-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #1f2937;
+.ss3-img-row:hover { background: #f3f4f6; border-color: #e5e7eb; }
+.ss3-img-row.focus {
+  background: #eff6ff; border-color: #bfdbfe;
 }
-.ss3-section-sub {
-  font-size: 10.5px;
-  color: #9ca3af;
+.ss3-thumb-sml {
+  width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: 7px; border: 1px solid #e8e8e8;
+  background: #f7f7f7 center / contain no-repeat;
 }
-.ss3-required-tip {
-  font-size: 11.5px;
-  line-height: 1.45;
-  border-radius: 9px;
-  padding: 8px 10px;
-  margin-bottom: 8px;
-  border: 1px solid #fca5a5;
-  background: #fff1f2;
-  color: #9f1239;
-}
-.ss3-required-tip.ready {
-  border-color: #86efac;
-  background: #f0fdf4;
-  color: #166534;
+.ss3-img-role {
+  flex: 1; min-width: 0;
+  font-size: 11.5px; font-weight: 600; color: #1f2937;
+  line-height: 1.25;
 }
 
-.ss3-panel > .bbox-wizard-nav { margin-top: 8px; }
+.kbd-hint { font-size: 10.5px; color: #9ca3af; margin-top: 12px; text-align: center; line-height: 1.45; }
+.kbd-hint kbd { background: #f0f0f0; border: 1px solid #e0e0e0; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-family: inherit; }
+
+/* Confirm button for state 3 */
+.ss3-confirm-btn {
+  width: 100%; background: #1a1a1a; color: #fff; border: none;
+  border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: background .15s, opacity .15s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; line-height: 1.2; margin-top: 4px;
+}
+.ss3-confirm-btn .proto-anno--block { margin: 0; font-size: 9px; font-weight: 400; color: rgba(255,255,255,.7); }
+.ss3-confirm-btn:hover:not(:disabled) { background: #333; }
+.ss3-confirm-btn:disabled {
+  background: #e0e0e0; color: #b0b0b0; cursor: not-allowed; opacity: 1;
+}
+.ss3-confirm-btn:disabled .proto-anno--block { color: #9ca3af; }
 
 .ai-badge { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; background: #f8f8f8; border: 1px solid #ebebeb; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; color: #333; margin-bottom: 12px; user-select: none; }
 .ai-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background .3s; }
@@ -302,16 +320,6 @@ body {
   padding: 14px 16px 16px;
   border-top: 1px solid #f0f0f0;
 }
-.adv-confirm-tip {
-  font-size: 11.5px;
-  line-height: 1.45;
-  border-radius: 9px;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-  border: 1px solid #dbeafe;
-  background: #eff6ff;
-  color: #1d4ed8;
-}
 #ss4ConfirmBtn { width: 100%; }
 #ss4ConfirmBtn[hidden] { display: none; }
 
@@ -321,71 +329,6 @@ body {
 .pstep.running { color: #555; }
 .pstep-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
-/* Bbox selection count badge */
-.bbox-count-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: #eff6ff; border: 1px solid #bfdbfe;
-  border-radius: 20px; padding: 4px 10px; font-size: 12px;
-  color: #3b82f6; font-weight: 500; margin-bottom: 8px;
-}
-.bbox-count-badge.empty { background: #f5f5f5; border-color: #e5e5e5; color: #aaa; }
-.bbox-count-badge--amber,
-.bbox-count-badge--amber.empty {
-  border-color: #fde68a !important;
-  color: #92400e !important;
-  background: #fffbeb !important;
-}
-.bbox-count-badge--amber.empty { opacity: 0.95; }
-
-/* Bbox list */
-.bbox-items {
-  display: flex; flex-direction: column; gap: 6px;
-  max-height: 148px; overflow-y: auto;
-  padding-right: 2px;
-}
-.bbox-items::-webkit-scrollbar { width: 3px; }
-.bbox-items::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 3px; }
-.bbox-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 12px; border-radius: 10px;
-  background: #fafafa; border: 1px solid #f0f0f0;
-  cursor: pointer; transition: background .15s, border-color .15s, box-shadow .15s;
-  font-size: 12px; color: #374151; user-select: none;
-}
-.bbox-item:hover { background: #f3f4f6; border-color: #e5e7eb; }
-.bbox-item.selected {
-  background: #fff;
-  border-color: #bfdbfe;
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.12), 0 2px 8px rgba(59, 130, 246, 0.08);
-}
-.bbox-swatch {
-  width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
-}
-.bbox-item-name { flex: 1; min-width: 0; font-weight: 500; letter-spacing: -0.01em; }
-.bbox-item-name .proto-anno--inline { font-weight: 400; }
-.bbox-item-del {
-  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-  border-radius: 8px; color: #d1d5db; cursor: pointer; transition: background .15s, color .15s; flex-shrink: 0;
-}
-.bbox-item-del:hover { background: #fef2f2; color: #ef4444; }
-.bbox-empty {
-  border: 1px dashed #e5e7eb;
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: #fafafa;
-  color: #9ca3af;
-  font-size: 11.5px;
-  line-height: 1.45;
-}
-
-.kbd-hint { font-size: 10.5px; color: #9ca3af; margin-top: 12px; text-align: center; line-height: 1.45; }
-.kbd-hint kbd { background: #f0f0f0; border: 1px solid #e0e0e0; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-family: inherit; }
-
-/* Linear bbox nav (state 3): Next / Done merged into one control */
-.bbox-wizard-nav {
-  display: flex; align-items: stretch; gap: 8px; margin-top: 10px; margin-bottom: 10px;
-}
 .bbox-nav-btn {
   flex: 1; background: #f2f2f2; color: #333; border: 1px solid #e8e8e8;
   border-radius: 9px; padding: 8px 10px; font-size: 13px; font-weight: 500;
@@ -404,13 +347,6 @@ body {
 }
 .bbox-nav-btn.bbox-nav-btn--primary:not(:disabled) .proto-anno--block { color: rgba(255,255,255,.75); }
 .bbox-nav-btn.bbox-nav-btn--primary:disabled .proto-anno--block { color: #9ca3af; }
-.bt-caption {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 10px; min-height: 38px;
-  font-size: 11px; font-weight: 600; color: #444;
-  white-space: nowrap;
-}
-.bt-caption .proto-anno--block { margin-top: 0; margin-left: 4px; font-size: 9px; color: #94a3b8; font-weight: 500; }
 
 .rp-spacer { flex: 1; min-height: 0; }
 .rp-input { padding: 12px; border-top: 1px solid #f4f4f4; flex-shrink: 0; }
@@ -495,9 +431,7 @@ body {
 .ell-2 { animation: d2 1.4s ease-in-out infinite; }
 .ell-3 { animation: d3 1.4s ease-in-out infinite; }
 
-/* ═══ ADVANCED SECTION (inline right panel) ═══ */
-
-/* Scan line animation for backfill */
+/* ═══ ADVANCED SECTION ═══ */
 @keyframes scanLine {
   0%   { top: 0; opacity: .9; }
   100% { top: 100%; opacity: 0; }
@@ -507,7 +441,6 @@ body {
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* Section headers inside rp */
 .adv-sec-hdr {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 10px;
@@ -523,7 +456,6 @@ body {
 }
 .adv-add-info:hover { opacity: .75; }
 
-/* Primary image frame */
 .adv-primary-thumb {
   width: 78px; height: 78px; border: 1.5px dashed #d8d8d8;
   border-radius: 10px; background: #f7f7f7; flex-shrink: 0;
@@ -547,7 +479,6 @@ body {
 }
 .adv-primary-thumb.filled .adv-star { display: block; }
 
-/* Scan line overlay */
 .adv-scan-line {
   position: absolute; left: 0; right: 0; height: 2px; top: 0;
   background: linear-gradient(90deg, transparent, #3b82f6, transparent);
@@ -556,7 +487,6 @@ body {
 }
 .adv-primary-thumb.recognizing .adv-scan-line { display: block; }
 
-/* Acc scan line (amber) */
 .adv-acc-scan-line {
   position: absolute; left: 0; right: 0; height: 2px; top: 0;
   background: linear-gradient(90deg, transparent, #f59e0b, transparent);
@@ -564,7 +494,6 @@ body {
   pointer-events: none; display: none; z-index: 2;
 }
 
-/* Accessory thumbs */
 .adv-acc-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
 .adv-acc-thumb {
   width: 78px; height: 78px; border: 1.5px dashed #d8d8d8;
@@ -593,7 +522,6 @@ body {
 }
 .adv-acc-add-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
-/* Fields inside adv section */
 .adv-fields { display: flex; gap: 8px; margin-top: 10px; }
 .adv-field { flex: 1; }
 .adv-field label { display: block; font-size: 10.5px; color: #bbb; margin-bottom: 4px; font-weight: 500; }
@@ -605,11 +533,9 @@ body {
 .adv-field input:focus { border-color: #3b82f6; background: #fff; }
 .adv-field input::placeholder { color: #d0d0d0; }
 
-/* The advanced section wrapper – always in panel, hidden when adv off or state < 4 */
 .adv-section { display: none; animation: fadeIn .3s ease; }
 .adv-section.show { display: block; }
 
-/* Backfill ripple on thumb border */
 @keyframes thumbHighlight {
   0%   { box-shadow: 0 0 0 0 rgba(59,130,246,.5); }
   70%  { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
@@ -617,50 +543,7 @@ body {
 }
 .adv-primary-thumb.just-filled { animation: thumbHighlight .6s ease; }
 
-/* ═══ ADD INFO MODAL ═══ */
-.modal-backdrop {
-  position: fixed; inset: 0; z-index: 9000;
-  background: rgba(0,0,0,0.18); backdrop-filter: blur(2px);
-  display: flex; align-items: center; justify-content: center;
-  animation: fadeIn .15s ease;
-}
-.modal-backdrop.hidden { display: none; }
-.modal-card {
-  background: #fff; border-radius: 20px; padding: 24px 24px 20px;
-  width: 440px; max-width: calc(100vw - 32px);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
-  animation: fadeIn .2s ease;
-}
-.modal-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 18px; }
-.modal-acc-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
-.modal-acc-img {
-  width: 90px; height: 90px; border-radius: 10px; border: 1px solid #e8e8e8;
-  object-fit: contain; padding: 6px; background: #f7f7f7; flex-shrink: 0;
-}
-.modal-fields { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-.modal-field label { display: block; font-size: 11px; color: #aaa; margin-bottom: 4px; font-weight: 500; }
-.modal-field input {
-  width: 100%; border: 1px solid #ebebeb; border-radius: 9px; padding: 8px 12px;
-  font-size: 13px; color: #1a1a1a; font-family: inherit; outline: none;
-  background: #f7f7f7; transition: border-color .15s;
-}
-.modal-field input:focus { border-color: #3b82f6; background: #fff; }
-.modal-field input::placeholder { color: #d0d0d0; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-.modal-cancel {
-  background: #f2f2f2; color: #555; border: none; border-radius: 20px;
-  padding: 9px 22px; font-size: 13px; font-weight: 500; cursor: pointer;
-  font-family: inherit; transition: background .15s;
-}
-.modal-cancel:hover { background: #e8e8e8; }
-.modal-confirm {
-  background: #1a1a1a; color: #fff; border: none; border-radius: 20px;
-  padding: 9px 22px; font-size: 13px; font-weight: 500; cursor: pointer;
-  font-family: inherit; transition: background .15s;
-}
-.modal-confirm:hover { background: #333; }
-
-/* Add Info UI hidden (prototype) */
+/* Add Info UI hidden */
 .adv-acc-thumb .acc-info-chip,
 .adv-acc-thumb .acc-info-dot { display: none !important; }
 </style>
@@ -722,14 +605,8 @@ body {
       </div>
     </div>
 
-    <!-- ── STATE 3: Manual BBox ── -->
-    <div class="cards-wrap cs" id="cs3">
-      <div class="pcard bbox-target" id="bboxTargetCard" style="background:#f5f5f5;">
-        <img id="manualStageImg"
-             src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
-             alt="Editing image" style="width:100%;height:100%;object-fit:contain;padding:10px;"/>
-      </div>
-    </div>
+    <!-- ── STATE 3: Multi-card BBox (populated by JS) ── -->
+    <div class="cards-wrap cs" id="cs3"></div>
 
     <!-- ── STATE 4: Confirmed ── -->
     <div class="cards-wrap cs" id="cs4">
@@ -740,40 +617,11 @@ body {
       </div>
     </div>
 
-    <!-- BBox drawing SVG layer -->
-    <svg id="bboxLayer" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-      <!-- Transparent hit-area ensures the entire canvas captures pointer events -->
-      <rect id="bboxBg" width="100%" height="100%" fill="transparent" style="pointer-events:all;"/>
-    </svg>
-
-    <!-- Bottom BBox Toolbar (state 3) -->
+    <!-- Bottom BBox Toolbar (state 3) — size slider only -->
     <div id="bboxToolbar">
-      <!-- Role caption: single = primary only; multi = linear step (no mode tabs) -->
-      <div class="bt-card" id="bboxRoleCard">
-        <div class="bt-caption" id="bboxCaptionSingle" style="display:none;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke-width="1.5" opacity=".35"/></svg>
-          <span>Primary<span class="proto-anno proto-anno--inline">主商品</span></span>
-        </div>
-        <div class="bt-caption" id="bboxCaptionLinear" style="display:none;">
-          <span id="bboxLinearCaptionText"></span>
-        </div>
-        <!-- Legacy mode switch (kept for JS toggles on hidden single-image accessory nodes) -->
-        <div class="bt-tool active" id="modeBtnSubject" onclick="setBboxMode('subject')" style="display:none;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-          Primary<span class="proto-anno proto-anno--block">主商品</span>
-          <div class="bt-tool-dot" id="modeSubjectDot"></div>
-        </div>
-        <div class="bt-sep" id="modeBtnSep" style="display:none;"></div>
-        <div class="bt-tool" id="modeBtnAccessory" onclick="setBboxMode('accessory')" style="display:none;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
-          Accessory<span class="proto-anno proto-anno--block">配件</span>
-          <div class="bt-tool-dot" id="modeAccessoryDot" style="background:#f59e0b;"></div>
-        </div>
-      </div>
-      <!-- Right: size + erase -->
       <div class="bt-card bt-size-wrap">
         <span class="bt-size-label">Box size<span class="proto-anno proto-anno--inline">选框大小</span></span>
-        <input type="range" class="bt-slider" id="bboxSizeSlider" min="40" max="280" value="120" disabled>
+        <input type="range" class="bt-slider" id="bboxSizeSlider" min="40" max="240" value="110" disabled>
       </div>
     </div>
   </main>
@@ -795,14 +643,14 @@ body {
 
       <!-- STATE 1 -->
       <div class="ss active sbody" id="ss1">
-        <div class="srow"><div class="spin" style="margin-top:2px;"></div><span><span id="ss1Lead">Image received! Let's get it <strong style="color:#1a1a1a;">ready for the spotlight.</strong></span><span class="proto-anno proto-anno--block" style="margin-top:6px;">已收到图片（首张为物体图，其余为配件图），准备上架展示</span></span></div>
+        <div class="srow"><div class="spin" style="margin-top:2px;"></div><span><span id="ss1Lead">Image received! Let's get it <strong style="color:#1a1a1a;">ready for the spotlight.</strong></span><span class="proto-anno proto-anno--block" style="margin-top:6px;">已收到图片，准备上架展示</span></span></div>
         <div class="psteps" id="procSteps">
           <div class="pstep running" id="pstep0"><div class="spin spin-sm pstep-icon"></div>Removing watermarks<span class="ell-1">.</span><span class="ell-2">.</span><span class="ell-3">.</span></div>
           <div class="pstep" id="pstep1"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Removing background</div>
           <div class="pstep" id="pstep2"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Enhancing quality</div>
           <div class="pstep" id="pstep3"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Identifying object</div>
         </div>
-        <div class="proto-anno proto-anno--block" style="margin-top:10px;">步骤对照：去水印 → 去背景 → 增强画质 → 识别物体</div>
+        <div class="proto-anno proto-anno--block" style="margin-top:10px;">步骤：去水印 → 去背景 → 增强画质 → 识别物体</div>
       </div>
 
       <!-- STATE 2 -->
@@ -811,42 +659,32 @@ body {
         <div class="srow muted"><div class="spin spin-sm" style="margin-top:1px;"></div><span>Continuing to generation…<span class="proto-anno proto-anno--inline">继续进入生成</span></span></div>
       </div>
 
-      <!-- STATE 3 -->
+      <!-- STATE 3: all-at-once bbox review -->
       <div class="ss sbody" id="ss3">
         <div class="ss3-panel">
-        <div class="ss3-ai-unclear" id="ss3AiUnclearNote" role="status">
-          <div class="ss3-ai-unclear-icon" aria-hidden="true">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <div class="ss3-ai-unclear-body">
-            <strong>Detection unclear</strong> — the AI couldn’t confidently locate the product. Please confirm or adjust the boxes on the canvas.
-            <span class="proto-anno proto-anno--block">中文：AI 未能清晰识别物体位置，请在画布上确认或调整选框。</span>
-          </div>
-        </div>
 
-        <div class="ss3-block">
-          <div class="ss3-section-head">
-            <span class="ss3-section-title">Primary box (required)</span>
-            <span class="ss3-section-sub">主商品（必选）</span>
+          <div class="ss3-ai-unclear" id="ss3AiUnclearNote" role="status">
+            <div class="ss3-ai-unclear-icon" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="ss3-ai-unclear-body">
+              BeePop Agent couldn't confidently locate the product. Please confirm or adjust the boxes on the canvas.
+              <span class="proto-anno proto-anno--block">BeePop Agent 未能稳定定位商品，请在画布上确认或调整选框。</span>
+            </div>
           </div>
-          <div class="ss3-required-tip" id="subjectGateTip">Add one primary box to continue<span class="proto-anno proto-anno--inline">请先框选一个主商品才能继续</span></div>
-          <div class="bbox-items" id="subjectItems"></div>
-        </div>
 
-        <div class="ss3-block" id="ss3AccessoryBlock">
-          <div class="ss3-section-head">
-            <span class="ss3-section-title">Accessory boxes</span>
-            <span class="ss3-section-sub">配件</span>
+          <div class="ss3-img-list" id="ss3ImgList"></div>
+
+          <!-- Confirm button -->
+          <button type="button" class="ss3-confirm-btn" id="bboxConfirmBtn" onclick="confirmSubject()" disabled>
+            Confirm &amp; Continue
+            <span class="proto-anno proto-anno--block">确认所有选框并进入下一步</span>
+          </button>
+
+          <div class="kbd-hint">
+            Click to place · drag · <kbd>Del</kbd> remove
+            <span class="proto-anno proto-anno--block">单击放置 · 拖拽 · Del 删除</span>
           </div>
-          <div class="bbox-items" id="accessoryItems"></div>
-        </div>
-
-        <div class="bbox-wizard-nav" id="bboxNavRow" style="display:none;">
-          <button type="button" class="bbox-nav-btn" id="bboxNavPrev" onclick="bboxStepPrev()">Previous<span class="proto-anno proto-anno--block">上一步</span></button>
-          <button type="button" class="bbox-nav-btn" id="bboxNavNext" onclick="bboxNavNextOrFinish()">Next<span class="proto-anno proto-anno--block">下一步</span></button>
-        </div>
-
-        <div class="kbd-hint" id="bboxKbdHint">Click to place · drag · <kbd>Del</kbd> remove<span class="proto-anno proto-anno--block">单击放置 · 拖拽 · Del 删除</span></div>
         </div>
       </div>
 
@@ -859,12 +697,9 @@ body {
 
     <div class="rp-spacer"></div>
 
-    <!-- ADVANCED SECTION — shown in-panel when advanced mode ON and state >= 4 -->
-
+    <!-- ADVANCED SECTION -->
     <div class="adv-section" id="advSection">
       <div style="padding: 14px 16px 0; border-top: 1px solid #f0f0f0;">
-
-        <!-- Primary -->
         <div class="adv-sec-hdr">
           <div class="adv-sec-title">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
@@ -872,28 +707,20 @@ body {
           </div>
         </div>
         <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:14px;">
-          <!-- Primary thumb -->
           <div class="adv-primary-thumb" id="advPrimaryThumb">
             <div class="adv-scan-line"></div>
             <img id="advPrimaryImg" src="" alt="Primary"/>
             <span class="adv-star">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </span>
-            <!-- placeholder icon -->
             <svg class="adv-ph-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
         </div>
-
-        <!-- Accessories -->
         <div class="adv-sec-hdr">
           <div class="adv-sec-title">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             Accessories<span class="proto-anno proto-anno--inline">配件</span>
           </div>
-          <!-- <span class="adv-add-info" onclick="advAddAcc(true)">
-            Add Info
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </span> -->
         </div>
         <div class="adv-acc-row" id="advAccRow">
           <div class="adv-acc-add-btn" id="advAccAddBtn" onclick="advAddAcc()">+</div>
@@ -903,7 +730,6 @@ body {
 
     <div class="adv-confirm-block" id="advConfirmBlock" aria-hidden="true">
       <div class="adv-confirm-inner">
-        <div class="adv-confirm-tip" id="ss4Tip">Review primary &amp; accessories above and set any options. Confirm when ready to continue to <strong>image analysis</strong> (the step before generation).<span class="proto-anno proto-anno--block">请先在上方完成主商品/配件及相关参数；确认后进入下一步「图片分析」（生图前环节）。</span></div>
         <button type="button" class="bbox-nav-btn bbox-nav-btn--primary" id="ss4ConfirmBtn" onclick="confirmAdvancedGeneration()">Continue<span class="proto-anno proto-anno--block">确认设置并进入图片分析</span></button>
       </div>
     </div>
@@ -911,7 +737,7 @@ body {
     </div><!-- /rp-scroll -->
     <div class="rp-input" id="rpInput">
       <div class="input-card">
-        <div class="input-text">Product: Stanley Quencher H2.0 FlowState™ Tumbler. Audience: Eco-conscious commuters, fitness enthusiasts, and trendy professionals. Benefit: Superior thermal retention and effortless portability for daily hydration. Material: Recycled 18/8 stainless steel with a matte powder-coat finish.<span class="proto-anno proto-anno--block">原型说明：示例商品 briefing（英文稿）；上线可复制为任意产品描述。</span></div>
+        <div class="input-text">Product: Stanley Quencher H2.0 FlowState™ Tumbler. Audience: Eco-conscious commuters, fitness enthusiasts, and trendy professionals. Benefit: Superior thermal retention and effortless portability for daily hydration.<span class="proto-anno proto-anno--block">原型示例商品 briefing</span></div>
         <div class="input-foot">
           <div class="auto-process-wrap">
             <span class="auto-process-tip">Auto-Process<span class="proto-anno proto-anno--block" style="color:#64748b;font-weight:400;margin-top:2px;">自动处理</span></span>
@@ -920,7 +746,7 @@ body {
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <select id="advModeSel" class="auto-sel" title="Workflow mode — 工作流模式">
+            <select id="advModeSel" class="auto-sel" title="Workflow mode">
               <option value="auto">Auto</option>
               <option value="advanced">Advanced</option>
             </select>
@@ -932,31 +758,6 @@ body {
     </div>
   </aside>
 </div>
-
-<!-- ADD INFO MODAL -->
-<!-- <div class="modal-backdrop hidden" id="addInfoModal">
-  <div class="modal-card">
-    <div class="modal-title">Add Info</div>
-    <div style="font-size:12px;color:#bbb;margin-bottom:12px;" id="modalAccLabel">Accessories</div>
-    <div class="modal-acc-row">
-      <img class="modal-acc-img" id="modalAccImg" src="" alt="Accessory"/>
-      <div class="modal-fields">
-        <div class="modal-field">
-          <label>Quantity</label>
-          <input type="text" id="modalQty" placeholder="Input Quan"/>
-        </div>
-        <div class="modal-field">
-          <label>Dimensions</label>
-          <input type="text" id="modalDim" placeholder="Input Dimensions"/>
-        </div>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="modal-cancel" onclick="closeAddInfoModal()">Cancel</button>
-      <button class="modal-confirm" onclick="confirmAddInfo()">Confirm</button>
-    </div>
-  </div>
-</div> -->
 
 <!-- DEMO NAV -->
 <div class="demo-nav">
@@ -980,7 +781,7 @@ const STEP_LABELS = [
   ['Removing watermarks', 'Watermark removed'],
   ['Removing background', 'Background removed'],
   ['Enhancing quality',   'Quality enhanced'],
-  ['Identifying object', 'Object identified'],
+  ['Identifying object',  'Object identified'],
 ];
 let stepTimers = [];
 
@@ -998,40 +799,38 @@ function goState(n) {
   const dot = document.getElementById('aiDot');
   dot.className = 'ai-dot ' + ({1:'processing',2:'success',3:'warn',4:'success'}[n] || 'idle');
 
+  const canvas = document.getElementById('mainCanvas');
+  canvas.classList.toggle('state3', n === 3);
+
   const hint = document.getElementById('canvasHint');
   if (n !== 3) {
     hint.innerHTML = '';
     hint.classList.remove('show');
   }
 
-  // BBox layer + toolbar
-  const layer = document.getElementById('bboxLayer');
   const toolbar = document.getElementById('bboxToolbar');
-
   if (n === 3) {
-    layer.classList.add('active');
     toolbar.classList.add('show');
   } else {
-    layer.classList.remove('active');
     toolbar.classList.remove('show');
+    selectedId = null;
   }
 
   if (n === 1) startProcAnimation();
   if (n === 4) onState4();
-  // Hide adv section when navigating away from state 4
   if (n !== 4) document.getElementById('advSection').classList.remove('show');
+
   if (n === 3) {
-    setBboxMode('subject');
+    selectedId = null;
     ensureSubjectAiSeeded();
     seedAllAccessoryAiIfMulti();
-    renderAll();
-    syncSidebar();
-    syncManualBoxChrome();
+    renderState3Canvas();
+    syncSidebar3();
     updateCanvasHint3();
   }
+
   syncState4AdvancedGate();
 }
-
 
 function startProcAnimation() {
   stepTimers.forEach(clearTimeout);
@@ -1078,23 +877,16 @@ function simulateFlow(aiSuccess) {
 }
 
 
-/* ════════════════════ UPLOAD SET (prototype) ════════════════════ */
-/** Index 0 = primary object image; 1..n = accessory images (each gets its own bbox layer). */
+/* ════════════════════ UPLOAD SET ════════════════════ */
 const UPLOAD_IMAGES = [
   'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
   'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
   'https://picsum.photos/seed/beepop-proto-upload3/400/400',
 ];
-let activeImageIndex = 0;
 
 function syncPrimaryStageImages() {
   const u = UPLOAD_IMAGES[0];
   document.querySelectorAll('[data-stage-primary]').forEach(el => { el.src = u; });
-}
-
-function applyManualStageImage() {
-  const el = document.getElementById('manualStageImg');
-  if (el) el.src = UPLOAD_IMAGES[activeImageIndex] || UPLOAD_IMAGES[0];
 }
 
 function updateSs1Lead() {
@@ -1104,191 +896,38 @@ function updateSs1Lead() {
   if (n <= 1) {
     el.innerHTML = `Image received! Let's get it <strong style="color:#1a1a1a;">ready for the spotlight.</strong>`;
   } else {
-    el.innerHTML = `Received <strong style="color:#1a1a1a;">${n} images</strong> — first is primary, rest are accessories. Processing each the same way.`;
+    el.innerHTML = `Received <strong style="color:#1a1a1a;">${n} images</strong> — first is primary, rest are accessories. Processing each.`;
   }
 }
 
 function updateCanvasHint3() {
   const hint = document.getElementById('canvasHint');
   if (!hint) return;
-  const cur = activeImageIndex + 1;
-  const role = activeImageIndex === 0 ? 'Primary' : 'Accessory';
-  const navHint = isMultiBboxUpload() ? ' · Next/Prev in panel' : '';
-  const navCn = isMultiBboxUpload() ? ' · 右栏上一步/下一步' : '';
-  const tail = activeImageIndex === 0
-    ? ' — one primary box: adjust or click empty to reposition'
-    : ' — adjust boxes, click empty to add another';
-  const tailCn = activeImageIndex === 0
-    ? ' · 仅一个主商品框：调整或单击空白重放'
-    : ' · 调整选框，单击空白可加多个配件框';
-  hint.innerHTML = `<span class="hint-main">Image ${cur}/${UPLOAD_IMAGES.length} · ${role}${navHint}${tail}</span><span class="proto-anno proto-anno--block">第 ${cur}/${UPLOAD_IMAGES.length} 张 · ${activeImageIndex === 0 ? '主商品' : '配件'}${navCn}${tailCn}</span>`;
+  hint.innerHTML = `<span class="hint-main">Adjust boxes on the canvas, then confirm</span><span class="proto-anno proto-anno--block">在画布上调整选框后确认</span>`;
   hint.classList.add('show');
 }
 
-function isMultiBboxUpload() {
-  return UPLOAD_IMAGES.length > 1;
-}
 
-function updateLinearCaption() {
-  const el = document.getElementById('bboxLinearCaptionText');
-  if (!el || !isMultiBboxUpload()) return;
-  const n = UPLOAD_IMAGES.length;
-  const cur = activeImageIndex + 1;
-  if (activeImageIndex === 0) {
-    el.innerHTML = `Step <strong>1</strong>/${n} · Primary<span class="proto-anno proto-anno--inline">主商品确认</span>`;
-  } else {
-    el.innerHTML = `Step <strong>${cur}</strong>/${n} · Accessories<span class="proto-anno proto-anno--inline">图 ${cur} 配件框</span>`;
-  }
-}
-
-function currentImageStepComplete() {
-  if (activeImageIndex === 0) return subjectBoxesOk();
-  return accessoryBoxesOk(activeImageIndex);
-}
-
-function updateBboxNavButtons() {
-  const row = document.getElementById('bboxNavRow');
-  const prev = document.getElementById('bboxNavPrev');
-  const next = document.getElementById('bboxNavNext');
-  if (!row || !prev || !next) return;
-  if (curState !== 3) {
-    row.style.display = 'none';
-    return;
-  }
-  row.style.display = 'flex';
-  const multi = isMultiBboxUpload();
-  const hasSubject = subjectBoxesOk();
-  const doneHtml = `Done<span class="proto-anno proto-anno--block">完成</span>`;
-  const nextHtml = `Next<span class="proto-anno proto-anno--block">下一步</span>`;
-  const nextSkipHtml = `Next<span class="proto-anno proto-anno--block">下一步</span>`;
-
-  if (!multi) {
-    prev.style.display = 'none';
-    prev.disabled = true;
-    next.style.display = '';
-    next.style.flex = '1';
-    next.innerHTML = doneHtml;
-    next.classList.add('bbox-nav-btn--primary');
-    next.disabled = !subjectBoxesOk();
-    return;
-  }
-
-  prev.style.display = '';
-  next.style.flex = '';
-  prev.disabled = activeImageIndex <= 0;
-  const onLast = activeImageIndex >= UPLOAD_IMAGES.length - 1;
-  next.style.display = '';
-  if (onLast) {
-    next.innerHTML = doneHtml;
-    next.classList.add('bbox-nav-btn--primary');
-    next.disabled = !hasSubject;
-  } else {
-    next.innerHTML = activeImageIndex === 0 ? nextHtml : nextSkipHtml;
-    next.classList.remove('bbox-nav-btn--primary');
-    next.disabled = !currentImageStepComplete();
-  }
-}
-
-function applyBboxStepIndex(idx) {
-  activeImageIndex = Math.max(0, Math.min(idx, UPLOAD_IMAGES.length - 1));
-  bboxMode = activeImageIndex === 0 ? 'subject' : 'accessory';
-  selectedId = null;
-  syncModeUi(bboxMode);
-  applyManualStageImage();
-  if (curState === 3) {
-    if (idx === 0) ensureSubjectAiSeeded();
-    else ensureAccessoryImageSeeded(idx);
-    updateCanvasHint3();
-    updateLinearCaption();
-  }
-  renderAll();
-  syncSidebar();
-}
-
-function bboxStepNext() {
-  if (!isMultiBboxUpload() || curState !== 3) return;
-  if (activeImageIndex >= UPLOAD_IMAGES.length - 1) return;
-  applyBboxStepIndex(activeImageIndex + 1);
-}
-
-function bboxNavNextOrFinish() {
-  if (curState !== 3) return;
-  if (!isMultiBboxUpload()) {
-    confirmSubject();
-    return;
-  }
-  if (activeImageIndex >= UPLOAD_IMAGES.length - 1) {
-    confirmSubject();
-    return;
-  }
-  bboxStepNext();
-}
-
-function bboxStepPrev() {
-  if (!isMultiBboxUpload() || curState !== 3) return;
-  if (activeImageIndex <= 0) return;
-  applyBboxStepIndex(activeImageIndex - 1);
-}
-
-/** Single-image: hide accessory UI; multi-image: linear captions + nav. */
-function syncManualBoxChrome() {
-  const multi = isMultiBboxUpload();
-
-  const accBlock = document.getElementById('ss3AccessoryBlock');
-  if (accBlock) accBlock.style.display = multi ? '' : 'none';
-
-  const capSingle = document.getElementById('bboxCaptionSingle');
-  const capLin = document.getElementById('bboxCaptionLinear');
-  if (capSingle && capLin) {
-    capSingle.style.display = multi ? 'none' : 'flex';
-    capLin.style.display = multi ? 'flex' : 'none';
-  }
-  if (multi) updateLinearCaption();
-
-  const hint = document.getElementById('bboxKbdHint');
-  if (hint) {
-    if (multi) {
-      hint.innerHTML = `Previous / Next in panel · primary = required · accessories = multiple · <kbd>Del</kbd> remove<span class="proto-anno proto-anno--block">使用侧栏上一步/下一步 · 主商品必选 · 配件可多框 · Del 删除</span>`;
-    } else {
-      hint.innerHTML = `Adjust box · drag · <kbd>Del</kbd> remove<span class="proto-anno proto-anno--block">调整选框 · 拖拽 · Del 删除</span>`;
-    }
-  }
-
-  updateBboxNavButtons();
-}
-
-/* ════════════════════ BBOX INTERACTION ════════════════════ */
+/* ════════════════════ BBOX DATA ════════════════════ */
 const SUBJECT_COLORS   = ['#3b82f6', '#8b5cf6', '#10b981'];
 const ACCESSORY_COLORS = ['#f59e0b', '#ef4444', '#ec4899', '#fb923c'];
 const HANDLE_SIZE = 7;
-const MIN_BOX = 32;
-const DEFAULT_W = 120;
-const DEFAULT_H = 120;
+const MIN_BOX = 28;
+const DEFAULT_W = 110;
+const DEFAULT_H = 110;
+// Card size in state 3 (matches CSS #cs3 .pcard)
+const CARD_SIZE = 190;
+const CARD_CX = CARD_SIZE / 2; // 95
 
-let bboxMode = 'subject'; // 'subject' | 'accessory'
 let boxes = [];
 let nextId = 1;
 let selectedId = null;
-
-// Drag state
 let drag = null;
-// drag = null | { mode:'move', id, sx,sy,ox,oy } | { mode:'resize', id, dir, sx,sy, orig:{x,y,w,h} }
+// drag = null | { mode:'move'|'resize', id, dir?, sx, sy, ox?, oy?, orig?, cardIdx, svgEl }
 
-// Hover preview
-let previewVisible = false;
-let previewEl = null;
 
-const bboxLayer = document.getElementById('bboxLayer');
-const slider = document.getElementById('bboxSizeSlider');
-
-function getLayerCenter() {
-  const r = bboxLayer.getBoundingClientRect();
-  return { cx: r.width / 2, cy: r.height / 2 };
-}
-
-/** Push a prototype preset box (initial placement on canvas). */
+/* ── Seed helpers ── */
 function pushAiBox({ mode, imageIndex, w, h, offsetX, offsetY }) {
-  const { cx, cy } = getLayerCenter();
   const ox = offsetX || 0, oy = offsetY || 0;
   const id = nextId++;
   const isAccessory = mode === 'accessory';
@@ -1300,7 +939,8 @@ function pushAiBox({ mode, imageIndex, w, h, offsetX, offsetY }) {
   const label = isAccessory ? `Accessory ${sameSlot.length + 1}` : 'Primary';
   boxes.push({
     id, mode, imageIndex: isAccessory ? imageIndex : 0,
-    x: cx - w / 2 + ox, y: cy - h / 2 + oy,
+    x: CARD_CX - w / 2 + ox,
+    y: CARD_CX - h / 2 + oy,
     w, h, color, label,
     aiSuggested: true
   });
@@ -1308,140 +948,179 @@ function pushAiBox({ mode, imageIndex, w, h, offsetX, offsetY }) {
 
 function ensureSubjectAiSeeded() {
   if (boxes.some(b => b.mode === 'subject' && b.imageIndex === 0)) return;
-  pushAiBox({ mode: 'subject', imageIndex: 0, w: DEFAULT_W, h: DEFAULT_H, offsetX: 0, offsetY: 0 });
+  pushAiBox({ mode: 'subject', imageIndex: 0, w: DEFAULT_W, h: DEFAULT_H });
 }
 
 function ensureAccessoryImageSeeded(imgIdx) {
   if (imgIdx < 1) return;
   if (boxes.some(b => b.mode === 'accessory' && b.imageIndex === imgIdx)) return;
-  const o = ((imgIdx % 5) - 2) * 14;
-  pushAiBox({ mode: 'accessory', imageIndex: imgIdx, w: DEFAULT_W, h: DEFAULT_H, offsetX: o, offsetY: Math.round(-o * 0.45) });
+  const o = ((imgIdx % 5) - 2) * 10;
+  pushAiBox({ mode: 'accessory', imageIndex: imgIdx, w: DEFAULT_W, h: DEFAULT_H, offsetX: o, offsetY: Math.round(-o * 0.4) });
 }
 
 function seedAllAccessoryAiIfMulti() {
   if (UPLOAD_IMAGES.length <= 1) return;
-  for (let i = 1; i < UPLOAD_IMAGES.length; i++) {
-    ensureAccessoryImageSeeded(i);
-  }
+  for (let i = 1; i < UPLOAD_IMAGES.length; i++) ensureAccessoryImageSeeded(i);
 }
 
-/* ── Coordinate helper ── */
-function layerPt(e) {
-  const r = bboxLayer.getBoundingClientRect();
-  const src = e.touches ? e.touches[0] : e;
-  return { x: src.clientX - r.left, y: src.clientY - r.top };
+
+/* ════════════════════ STATE 3 CANVAS RENDERING ════════════════════ */
+function renderState3Canvas() {
+  const cs3 = document.getElementById('cs3');
+  // Remove existing cards but keep any non-card children
+  cs3.querySelectorAll('.pcard').forEach(el => el.remove());
+
+  UPLOAD_IMAGES.forEach((src, idx) => {
+    const isSubject = idx === 0;
+    const card = document.createElement('div');
+    card.className = 'pcard';
+    card.dataset.cardIdx = idx;
+    card.style.background = '#f5f5f5';
+
+    // Product image
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = isSubject ? 'Primary' : `Accessory ${idx}`;
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;padding:10px;position:relative;z-index:0;pointer-events:none;';
+    card.appendChild(img);
+
+    // Role label at bottom
+    const lbl = document.createElement('div');
+    lbl.className = 'bbox-card-label';
+    lbl.innerHTML = isSubject
+      ? `Primary<span class="proto-anno">主商品</span>`
+      : `Accessory ${idx}<span class="proto-anno">配件${idx}</span>`;
+    card.appendChild(lbl);
+
+    // SVG bbox overlay
+    const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    svgEl.classList.add('bbox-card-layer');
+    svgEl.dataset.cardIdx = idx;
+
+    // Transparent hit background
+    const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bgRect.setAttribute('width', '100%');
+    bgRect.setAttribute('height', '100%');
+    bgRect.setAttribute('fill', 'transparent');
+    bgRect.setAttribute('data-bg', idx);
+    svgEl.appendChild(bgRect);
+
+    card.appendChild(svgEl);
+    cs3.appendChild(card);
+
+    attachCardBboxEvents(svgEl, idx);
+    renderCardBoxes(idx);
+  });
+
+  updateCardFocus();
 }
 
 /* ── SVG helper ── */
-function svg(tag, attrs = {}, style = {}) {
+function svgEl(tag, attrs = {}, style = {}) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   for (const [k, v] of Object.entries(style)) el.style[k] = v;
   return el;
 }
 
-/* ════ HOVER PREVIEW ════ */
-function getOrCreatePreview() {
-  if (!previewEl) {
-    previewEl = svg('rect', { rx: 6, fill: '#3b82f614', stroke: '#3b82f6', 'stroke-width': 2, 'stroke-dasharray': '7,5' }, { pointerEvents: 'none' });
-    bboxLayer.appendChild(previewEl);
-  }
-  return previewEl;
+/* ── Render boxes on a single card's SVG ── */
+function renderCardBoxes(cardIdx) {
+  const layer = document.querySelector(`.bbox-card-layer[data-card-idx="${cardIdx}"]`);
+  if (!layer) return;
+
+  layer.querySelectorAll('.bgrp').forEach(el => el.remove());
+
+  boxes.filter(b => b.imageIndex === cardIdx).forEach(b => {
+    const isSel = b.id === selectedId;
+    const g = svgEl('g', { class: 'bgrp' });
+
+    // Invisible hit area
+    const hit = svgEl('rect', {
+      x: b.x - 4, y: b.y - 4, width: b.w + 8, height: b.h + 8,
+      fill: 'transparent', 'data-role': 'body', 'data-id': b.id
+    }, { cursor: 'move' });
+    g.appendChild(hit);
+
+    // Box rect
+    const box = svgEl('rect', {
+      x: b.x, y: b.y, width: b.w, height: b.h, rx: 5,
+      fill: b.color + (isSel ? '1e' : '0d'),
+      stroke: b.color,
+      'stroke-width': isSel ? 2.5 : 1.8,
+    }, { pointerEvents: 'none' });
+    g.appendChild(box);
+
+    // Label badge
+    const LW = Math.max(58, Math.min(110, 8 + b.label.length * 6.2)), LH = 18;
+    const lbg = svgEl('rect', { x: b.x + 5, y: b.y + 5, width: LW, height: LH, rx: 4, fill: b.color }, { pointerEvents: 'none' });
+    g.appendChild(lbg);
+    const ltxt = svgEl('text', {
+      x: b.x + 5 + LW / 2, y: b.y + 16.5,
+      fill: '#fff', 'font-size': 10, 'font-family': '-apple-system,sans-serif',
+      'font-weight': 600, 'text-anchor': 'middle'
+    }, { pointerEvents: 'none' });
+    ltxt.textContent = b.label;
+    g.appendChild(ltxt);
+
+    if (isSel) {
+      HANDLE_DIRS.forEach(hd => {
+        const hx = hd.fx(b), hy = hd.fy(b);
+        const hcirc = svgEl('circle', {
+          cx: hx, cy: hy, r: HANDLE_SIZE,
+          fill: '#fff', stroke: b.color, 'stroke-width': 2,
+          'data-role': 'resize', 'data-id': b.id, 'data-dir': hd.id
+        }, { cursor: hd.cur, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.15))' });
+        g.appendChild(hcirc);
+      });
+
+      // Delete button
+      const dx = b.x + b.w + 2, dy = b.y - 2;
+      const dcirc = svgEl('circle', {
+        cx: dx, cy: dy, r: 10,
+        fill: '#ef4444', 'data-role': 'delete', 'data-id': b.id
+      }, { cursor: 'pointer' });
+      const dtxt = svgEl('text', {
+        x: dx, y: dy + 5, fill: '#fff',
+        'font-size': 14, 'font-family': 'sans-serif', 'text-anchor': 'middle'
+      }, { pointerEvents: 'none' });
+      dtxt.textContent = '×';
+      g.appendChild(dcirc);
+      g.appendChild(dtxt);
+    }
+
+    layer.appendChild(g);
+  });
+
+  // Hover preview — keep it on top
+  const preview = layer.querySelector('.bbox-preview');
+  if (preview) layer.appendChild(preview);
 }
 
-function showPreview(cx, cy) {
-  const el = getOrCreatePreview();
-  el.setAttribute('x', cx - DEFAULT_W / 2);
-  el.setAttribute('y', cy - DEFAULT_H / 2);
-  el.setAttribute('width', DEFAULT_W);
-  el.setAttribute('height', DEFAULT_H);
-  el.style.display = 'block';
-  previewVisible = true;
-  bboxLayer.style.cursor = 'crosshair';
+function renderAllCards() {
+  UPLOAD_IMAGES.forEach((_, idx) => renderCardBoxes(idx));
+  updateCardFocus();
+  updateToolbar();
 }
 
-function hidePreview() {
-  if (previewEl) previewEl.style.display = 'none';
-  previewVisible = false;
-}
-
-function syncModeUi(mode) {
-  const isSubject = mode === 'subject';
-  const ms = document.getElementById('modeBtnSubject');
-  const ma = document.getElementById('modeBtnAccessory');
-  if (ms && ma) {
-    ms.classList.toggle('active', isSubject);
-    ma.classList.toggle('active', !isSubject);
-  }
-  if (previewEl) {
-    const c = isSubject ? '#3b82f6' : '#f59e0b';
-    previewEl.setAttribute('stroke', c);
-    previewEl.setAttribute('fill', c + '14');
-  }
-}
-
-/* ════ MODE SWITCH ════ */
-function setBboxMode(mode) {
-  bboxMode = mode;
-  const isSubject = mode === 'subject';
-  if (isSubject) activeImageIndex = 0;
-  else if (UPLOAD_IMAGES.length > 1 && activeImageIndex === 0) activeImageIndex = 1;
-  selectedId = null;
-  syncModeUi(mode);
-  applyManualStageImage();
-  if (curState === 3) {
-    updateCanvasHint3();
-    if (isMultiBboxUpload()) updateLinearCaption();
-  }
-  renderAll();
-  syncSidebar();
-}
-
-/* ════ PLACE BOX ════ */
-function placeBox(cx, cy) {
-  const isAccessory = bboxMode === 'accessory';
-  const imgIdx = activeImageIndex;
-  if (!isAccessory && imgIdx !== 0) return;
-  if (isAccessory && imgIdx < 1) return;
-
-  // Primary: only one allowed on primary image — replace if exists
-  if (!isAccessory) {
-    const existing = boxes.find(b => b.mode === 'subject' && b.imageIndex === 0);
-    if (existing) {
-      existing.x = cx - DEFAULT_W / 2;
-      existing.y = cy - DEFAULT_H / 2;
-      existing.w = DEFAULT_W;
-      existing.h = DEFAULT_H;
-      existing.aiSuggested = false;
-      selectedId = existing.id;
-      renderAll();
-      syncSidebar();
-      return;
+function updateCardFocus() {
+  document.querySelectorAll('#cs3 .pcard').forEach(card => card.classList.remove('bbox-card-focus'));
+  if (selectedId !== null) {
+    const b = boxes.find(b => b.id === selectedId);
+    if (b) {
+      const card = document.querySelector(`#cs3 .pcard[data-card-idx="${b.imageIndex}"]`);
+      if (card) card.classList.add('bbox-card-focus');
     }
   }
-
-  const id = nextId++;
-  const palette = isAccessory ? ACCESSORY_COLORS : SUBJECT_COLORS;
-  const sameSlot = isAccessory
-    ? boxes.filter(b => b.mode === 'accessory' && b.imageIndex === imgIdx)
-    : boxes.filter(b => b.mode === 'subject' && b.imageIndex === 0);
-  const color = palette[sameSlot.length % palette.length];
-  const label = isAccessory ? `Accessory ${sameSlot.length + 1}` : 'Primary';
-  const b = {
-    id, mode: bboxMode,
-    imageIndex: isAccessory ? imgIdx : 0,
-    x: cx - DEFAULT_W / 2,
-    y: cy - DEFAULT_H / 2,
-    w: DEFAULT_W,
-    h: DEFAULT_H,
-    color, label,
-    aiSuggested: false
-  };
-  boxes.push(b);
-  selectedId = id;
-  renderAll();
-  syncSidebar();
 }
+
+/* ── Coordinate helper (card-relative) ── */
+function cardLayerPt(e, layerEl) {
+  const r = layerEl.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
+}
+
 
 /* ════ RESIZE MATH ════ */
 const HANDLE_DIRS = [
@@ -1467,205 +1146,189 @@ function applyResize(orig, dir, dx, dy) {
     case 'bc':                      h+=dy;  break;
     case 'br':               w+=dx; h+=dy;  break;
   }
-  // Clamp size
   if (w < MIN_BOX) { if (['tl','ml','bl'].includes(dir)) x = orig.x + orig.w - MIN_BOX; w = MIN_BOX; }
   if (h < MIN_BOX) { if (['tl','tc','tr'].includes(dir)) y = orig.y + orig.h - MIN_BOX; h = MIN_BOX; }
   return { x, y, w: Math.max(MIN_BOX, w), h: Math.max(MIN_BOX, h) };
 }
 
-/* ════ RENDER ALL BOXES ════ */
-function renderAll() {
-  // Remove old rendered groups
-  bboxLayer.querySelectorAll('.bgrp').forEach(el => el.remove());
 
-  boxes.filter(b => b.imageIndex === activeImageIndex).forEach(b => {
-    const isSel = b.id === selectedId;
-    const g = svg('g', { class: 'bgrp' });
+/* ════ HOVER PREVIEW ════ */
+function getOrCreatePreview(layerEl, cardIdx) {
+  let pr = layerEl.querySelector('.bbox-preview');
+  if (!pr) {
+    const isSubject = cardIdx === 0;
+    const c = isSubject ? '#3b82f6' : '#f59e0b';
+    pr = svgEl('rect', {
+      rx: 5, fill: c + '14', stroke: c,
+      'stroke-width': 1.8, 'stroke-dasharray': '6,4',
+      class: 'bbox-preview'
+    }, { pointerEvents: 'none', display: 'none' });
+    layerEl.appendChild(pr);
+  }
+  return pr;
+}
 
-    // Invisible hit area (slightly larger than box, for easier clicking)
-    const hit = svg('rect', {
-      x: b.x - 4, y: b.y - 4, width: b.w + 8, height: b.h + 8,
-      fill: 'transparent', 'data-role': 'body', 'data-id': b.id
-    }, { cursor: 'move' });
-    g.appendChild(hit);
+function showPreview(layerEl, cardIdx, p) {
+  const pr = getOrCreatePreview(layerEl, cardIdx);
+  pr.setAttribute('x', p.x - DEFAULT_W / 2);
+  pr.setAttribute('y', p.y - DEFAULT_H / 2);
+  pr.setAttribute('width', DEFAULT_W);
+  pr.setAttribute('height', DEFAULT_H);
+  pr.style.display = 'block';
+}
 
-    const box = svg('rect', {
-      x: b.x, y: b.y, width: b.w, height: b.h, rx: 5,
-      fill: b.color + (isSel ? '1e' : '0d'),
-      stroke: b.color,
-      'stroke-width': isSel ? 2.5 : 1.8,
-    }, { pointerEvents: 'none' });
-    g.appendChild(box);
+function hidePreview(layerEl) {
+  const pr = layerEl && layerEl.querySelector('.bbox-preview');
+  if (pr) pr.style.display = 'none';
+}
 
-    // Label badge
-    const labelShown = b.label;
-    const LW = Math.max(70, Math.min(118, 8 + labelShown.length * 6.2)), LH = 20;
-    const lbg = svg('rect', { x: b.x+5, y: b.y+5, width: LW, height: LH, rx: 5, fill: b.color }, { pointerEvents: 'none' });
-    g.appendChild(lbg);
-    const ltxt = svg('text', {
-      x: b.x+5+LW/2, y: b.y+18,
-      fill: '#fff', 'font-size': 11, 'font-family': '-apple-system,sans-serif',
-      'font-weight': 600, 'text-anchor': 'middle'
-    }, { pointerEvents: 'none' });
-    ltxt.textContent = labelShown;
-    g.appendChild(ltxt);
+function hideAllPreviews() {
+  document.querySelectorAll('.bbox-card-layer').forEach(l => hidePreview(l));
+}
 
-    if (isSel) {
-      // Resize handles
-      HANDLE_DIRS.forEach(hd => {
-        const hx = hd.fx(b), hy = hd.fy(b);
-        const hcirc = svg('circle', {
-          cx: hx, cy: hy, r: HANDLE_SIZE,
-          fill: '#fff', stroke: b.color, 'stroke-width': 2,
-          'data-role': 'resize', 'data-id': b.id, 'data-dir': hd.id
-        }, { cursor: hd.cur, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.15))' });
-        g.appendChild(hcirc);
-      });
 
-      // Delete button (top-right corner, offset outward)
-      const dx = b.x + b.w + 2, dy = b.y - 2;
-      const dcirc = svg('circle', {
-        cx: dx, cy: dy, r: 10,
-        fill: '#ef4444', 'data-role': 'delete', 'data-id': b.id
-      }, { cursor: 'pointer' });
-      const dtxt = svg('text', {
-        x: dx, y: dy + 5, fill: '#fff',
-        'font-size': 14, 'font-family': 'sans-serif',
-        'text-anchor': 'middle'
-      }, { pointerEvents: 'none' });
-      dtxt.textContent = '×';
-      g.appendChild(dcirc);
-      g.appendChild(dtxt);
+/* ════ PLACE BOX ════ */
+function placeBoxOnCard(cardIdx, cx, cy) {
+  const isAccessory = cardIdx > 0;
+
+  // Primary: only one allowed — replace existing
+  if (!isAccessory) {
+    const existing = boxes.find(b => b.mode === 'subject' && b.imageIndex === 0);
+    if (existing) {
+      existing.x = cx - DEFAULT_W / 2;
+      existing.y = cy - DEFAULT_H / 2;
+      existing.w = DEFAULT_W;
+      existing.h = DEFAULT_H;
+      existing.aiSuggested = false;
+      selectedId = existing.id;
+      renderCardBoxes(cardIdx);
+      updateCardFocus();
+      syncSidebar3();
+      return;
     }
+  }
 
-    bboxLayer.appendChild(g);
+  const id = nextId++;
+  const palette = isAccessory ? ACCESSORY_COLORS : SUBJECT_COLORS;
+  const sameSlot = boxes.filter(b => b.mode === (isAccessory ? 'accessory' : 'subject') && b.imageIndex === cardIdx);
+  const color = palette[sameSlot.length % palette.length];
+  const label = isAccessory ? `Accessory ${sameSlot.length + 1}` : 'Primary';
+  boxes.push({
+    id,
+    mode: isAccessory ? 'accessory' : 'subject',
+    imageIndex: cardIdx,
+    x: cx - DEFAULT_W / 2,
+    y: cy - DEFAULT_H / 2,
+    w: DEFAULT_W, h: DEFAULT_H,
+    color, label,
+    aiSuggested: false
+  });
+  selectedId = id;
+  renderCardBoxes(cardIdx);
+  updateCardFocus();
+  syncSidebar3();
+}
+
+
+/* ════ PER-CARD EVENT ATTACHMENT ════ */
+function attachCardBboxEvents(layerEl, cardIdx) {
+  layerEl.addEventListener('mousedown', e => {
+    if (curState !== 3) return;
+    const p = cardLayerPt(e, layerEl);
+    const role = e.target.getAttribute('data-role');
+    const id = parseInt(e.target.getAttribute('data-id'));
+
+    if (role === 'delete') {
+      e.stopPropagation();
+      removeBox(id);
+      return;
+    }
+    if (role === 'resize') {
+      e.preventDefault(); e.stopPropagation();
+      selectedId = id;
+      const b = boxes.find(b => b.id === id);
+      drag = { mode: 'resize', id, dir: e.target.getAttribute('data-dir'), sx: p.x, sy: p.y, orig: {...b}, cardIdx, layerEl };
+      hidePreview(layerEl);
+      renderCardBoxes(cardIdx);
+      updateCardFocus();
+      return;
+    }
+    if (role === 'body') {
+      e.preventDefault(); e.stopPropagation();
+      selectedId = id;
+      const b = boxes.find(b => b.id === id);
+      drag = { mode: 'move', id, sx: p.x, sy: p.y, ox: b.x, oy: b.y, cardIdx, layerEl };
+      hidePreview(layerEl);
+      layerEl.style.cursor = 'grabbing';
+      renderCardBoxes(cardIdx);
+      updateCardFocus();
+      return;
+    }
+    // Click on empty area → place box
+    const isBg = e.target === layerEl || e.target.getAttribute('data-bg') !== null;
+    if (isBg) {
+      hidePreview(layerEl);
+      placeBoxOnCard(cardIdx, p.x, p.y);
+    }
   });
 
-  // Update slider & erase btn
-  updateToolbar();
+  layerEl.addEventListener('mousemove', e => {
+    if (curState !== 3 || drag) return;
+    const isBg = e.target === layerEl || e.target.getAttribute('data-bg') !== null;
+    if (!selectedId && isBg) {
+      showPreview(layerEl, cardIdx, cardLayerPt(e, layerEl));
+    } else if (!isBg) {
+      hidePreview(layerEl);
+    }
+  });
+
+  layerEl.addEventListener('mouseleave', () => {
+    if (!drag) hidePreview(layerEl);
+  });
+
+  layerEl.addEventListener('click', e => {
+    if (curState !== 3) return;
+    const isBg = e.target === layerEl || e.target.getAttribute('data-bg') !== null;
+    if (isBg && selectedId !== null) {
+      selectedId = null;
+      renderCardBoxes(cardIdx);
+      updateCardFocus();
+      syncSidebar3();
+    }
+  });
 }
 
-function updateToolbar() {
-  const box = boxes.find(b => b.id === selectedId && b.imageIndex === activeImageIndex);
-  slider.disabled = !box;
-  if (box) {
-    const v = Math.round(box.w);
-    slider.value = Math.min(280, Math.max(40, v));
-    // Update slider fill track
-    const pct = ((slider.value - 40) / (280 - 40) * 100).toFixed(1) + '%';
-    slider.style.setProperty('--pct', pct);
-  }
-}
-
-/* ════ MOUSE DOWN ════ */
-bboxLayer.addEventListener('mousedown', e => {
-  if (curState !== 3) return;
-  const p = layerPt(e);
-  const role = e.target.getAttribute('data-role');
-  const id = parseInt(e.target.getAttribute('data-id'));
-
-  if (role === 'delete') {
-    e.stopPropagation();
-    removeBox(id);
-    return;
-  }
-
-  if (role === 'resize') {
-    e.preventDefault();
-    e.stopPropagation();
-    selectedId = id;
-    const b = boxes.find(b => b.id === id);
-    drag = { mode: 'resize', id, dir: e.target.getAttribute('data-dir'), sx: p.x, sy: p.y, orig: {...b} };
-    hidePreview();
-    renderAll();
-    return;
-  }
-
-  if (role === 'body') {
-    e.preventDefault();
-    e.stopPropagation();
-    selectedId = id;
-    const b = boxes.find(b => b.id === id);
-    drag = { mode: 'move', id, sx: p.x, sy: p.y, ox: b.x, oy: b.y };
-    hidePreview();
-    bboxLayer.style.cursor = 'grabbing';
-    renderAll();
-    return;
-  }
-
-  // Click on empty area (SVG root or transparent bg rect) → place box
-  if (e.target === bboxLayer || e.target.id === 'bboxBg') {
-    hidePreview();
-    placeBox(p.x, p.y);
-  }
-});
-
-/* ════ MOUSE MOVE (window) ════ */
+/* ════ GLOBAL DRAG HANDLERS ════ */
 window.addEventListener('mousemove', e => {
-  if (curState !== 3) return;
-  const p = layerPt(e);
+  if (curState !== 3 || !drag) return;
+  const p = cardLayerPt(e, drag.layerEl);
 
-  if (drag) {
-    if (drag.mode === 'move') {
-      const dx = p.x - drag.sx, dy = p.y - drag.sy;
-      const b = boxes.find(b => b.id === drag.id);
-      if (b) { b.x = drag.ox + dx; b.y = drag.oy + dy; }
-      renderAll();
-    } else if (drag.mode === 'resize') {
-      const dx = p.x - drag.sx, dy = p.y - drag.sy;
-      const b = boxes.find(b => b.id === drag.id);
-      if (b) {
-        const r = applyResize(drag.orig, drag.dir, dx, dy);
-        b.x = r.x; b.y = r.y; b.w = r.w; b.h = r.h;
-      }
-      renderAll();
+  if (drag.mode === 'move') {
+    const dx = p.x - drag.sx, dy = p.y - drag.sy;
+    const b = boxes.find(b => b.id === drag.id);
+    if (b) { b.x = drag.ox + dx; b.y = drag.oy + dy; }
+    renderCardBoxes(drag.cardIdx);
+  } else if (drag.mode === 'resize') {
+    const dx = p.x - drag.sx, dy = p.y - drag.sy;
+    const b = boxes.find(b => b.id === drag.id);
+    if (b) {
+      const r = applyResize(drag.orig, drag.dir, dx, dy);
+      b.x = r.x; b.y = r.y; b.w = r.w; b.h = r.h;
     }
-    return;
-  }
-
-  // Hover preview — only when no box selected, no drag, and cursor is on empty layer area
-  if (!selectedId) {
-    const isEmptyArea = (e.target === bboxLayer || e.target.id === 'bboxBg');
-    const cr = bboxLayer.getBoundingClientRect();
-    const inBounds = e.clientX >= cr.left && e.clientX <= cr.right &&
-                     e.clientY >= cr.top && e.clientY <= cr.bottom;
-    if (isEmptyArea && inBounds) {
-      showPreview(p.x, p.y);
-    } else if (!inBounds) {
-      hidePreview();
-    } else {
-      // Over an existing bbox element — hide preview
-      hidePreview();
-    }
+    renderCardBoxes(drag.cardIdx);
   }
 });
 
-/* ════ MOUSE UP ════ */
-window.addEventListener('mouseup', e => {
+window.addEventListener('mouseup', () => {
   if (!drag) return;
   if (curState === 3) {
     const b = boxes.find(x => x.id === drag.id);
     if (b) b.aiSuggested = false;
+    drag.layerEl.style.cursor = 'crosshair';
+    syncSidebar3();
   }
   drag = null;
-  bboxLayer.style.cursor = 'crosshair';
-  syncSidebar();
 });
-
-/* ════ CLICK ════ — deselect when clicking empty area */
-bboxLayer.addEventListener('click', e => {
-  if (curState !== 3) return;
-  if (e.target === bboxLayer || e.target.id === 'bboxBg') {
-    if (selectedId !== null) {
-      selectedId = null;
-      renderAll();
-      syncSidebar();
-    }
-  }
-});
-
-/* ════ MOUSE LEAVE canvas ════ */
-bboxLayer.addEventListener('mouseleave', () => { if (!drag) hidePreview(); });
 
 /* ════ KEYBOARD ════ */
 document.addEventListener('keydown', e => {
@@ -1676,14 +1339,16 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Escape') {
     selectedId = null;
-    renderAll();
-    syncSidebar();
+    renderAllCards();
+    syncSidebar3();
   }
 });
 
-/* ════ SLIDER ════ */
+/* ════ TOOLBAR SLIDER ════ */
+const slider = document.getElementById('bboxSizeSlider');
 slider.addEventListener('input', () => {
-  const b = boxes.find(b => b.id === selectedId && b.imageIndex === activeImageIndex);
+  if (!selectedId) return;
+  const b = boxes.find(b => b.id === selectedId);
   if (!b) return;
   b.aiSuggested = false;
   const newW = parseInt(slider.value);
@@ -1693,105 +1358,80 @@ slider.addEventListener('input', () => {
   b.h = Math.round(newW * ratio);
   b.x = cx - b.w / 2;
   b.y = cy - b.h / 2;
-  const pct = ((slider.value - 40) / (280 - 40) * 100).toFixed(1) + '%';
+  const pct = ((slider.value - 40) / (240 - 40) * 100).toFixed(1) + '%';
   slider.style.setProperty('--pct', pct);
-  renderAll();
-  syncSidebar();
+  renderCardBoxes(b.imageIndex);
+  syncSidebar3();
 });
 
-/* ════ SIDEBAR SYNC ════ */
-function renderBoxList(containerEl, subset, emptyHtml = '') {
-  containerEl.innerHTML = '';
-  if (!subset.length) {
-    if (emptyHtml) {
-      const empty = document.createElement('div');
-      empty.className = 'bbox-empty';
-      empty.innerHTML = emptyHtml;
-      containerEl.appendChild(empty);
-    }
-    return;
+function updateToolbar() {
+  if (curState !== 3) return;
+  const selBox = selectedId !== null ? boxes.find(b => b.id === selectedId) : null;
+  slider.disabled = !selBox;
+  if (selBox) {
+    const v = Math.round(selBox.w);
+    slider.value = Math.min(240, Math.max(40, v));
+    const pct = ((slider.value - 40) / (240 - 40) * 100).toFixed(1) + '%';
+    slider.style.setProperty('--pct', pct);
   }
-  subset.forEach(b => {
-    const item = document.createElement('div');
-    item.className = 'bbox-item' + (b.id === selectedId ? ' selected' : '');
-    item.dataset.id = b.id;
-    const imgNote = b.mode === 'accessory' ? ` · 图${b.imageIndex + 1}` : '';
-    const cn = b.mode === 'subject' ? '主商品' : (`配件${imgNote}`);
-    item.innerHTML = `
-      <div class="bbox-swatch" style="background:${b.color}"></div>
-      <span class="bbox-item-name">${b.label}<span class="proto-anno proto-anno--inline">${cn}</span></span>
-      <div class="bbox-item-del" data-did="${b.id}" title="Remove">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    `;
-    item.addEventListener('click', ev => {
-      if (ev.target.closest('[data-did]')) {
-        removeBox(parseInt(ev.target.closest('[data-did]').dataset.did));
-        return;
-      }
-      if (b.imageIndex !== activeImageIndex) {
-        activeImageIndex = b.imageIndex;
-        bboxMode = b.mode;
-        syncModeUi(b.mode);
-        applyManualStageImage();
-        if (curState === 3) updateCanvasHint3();
-      }
-      selectedId = b.id;
-      renderAll();
-      if (curState === 3 && isMultiBboxUpload()) updateLinearCaption();
-      syncSidebar();
-    });
-    containerEl.appendChild(item);
-  });
 }
 
+
+/* ════ SIDEBAR SYNC (STATE 3) ════ */
+function syncSidebar3() {
+  const listEl = document.getElementById('ss3ImgList');
+  const confirmBtn = document.getElementById('bboxConfirmBtn');
+  const ok = subjectBoxesOk();
+  if (confirmBtn) confirmBtn.disabled = !ok;
+
+  if (listEl) {
+    listEl.innerHTML = '';
+    const focusIdx = selectedId !== null
+      ? (boxes.find(b => b.id === selectedId) || {}).imageIndex
+      : -1;
+
+    UPLOAD_IMAGES.forEach((src, idx) => {
+      const row = document.createElement('div');
+      row.className = 'ss3-img-row' + (focusIdx === idx ? ' focus' : '');
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+      row.setAttribute('aria-label', idx === 0 ? 'Primary image' : 'Accessory image');
+
+      const thumb = document.createElement('div');
+      thumb.className = 'ss3-thumb-sml';
+      thumb.style.backgroundImage = `url(${src})`;
+      row.appendChild(thumb);
+
+      const role = document.createElement('div');
+      role.className = 'ss3-img-role';
+      role.innerHTML = idx === 0
+        ? `Primary<span class="proto-anno proto-anno--inline">主商品</span>`
+        : `Accessory<span class="proto-anno proto-anno--inline">配件</span>`;
+      row.appendChild(role);
+
+      row.addEventListener('click', () => {
+        const card = document.querySelector(`#cs3 .pcard[data-card-idx="${idx}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+      row.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          row.click();
+        }
+      });
+
+      listEl.appendChild(row);
+    });
+  }
+
+  updateToolbar();
+}
+
+/* ════ UTILITIES ════ */
 function subjectBoxesOk() {
   return boxes.some(b => b.mode === 'subject' && b.imageIndex === 0);
 }
 
-function accessoryBoxesOk(imageIndex) {
-  if (imageIndex < 1) return true;
-  return boxes.some(b => b.mode === 'accessory' && b.imageIndex === imageIndex);
-}
-
-function allAccessoryStepsResolved() {
-  if (UPLOAD_IMAGES.length <= 1) return true;
-  for (let i = 1; i < UPLOAD_IMAGES.length; i++) {
-    if (!accessoryBoxesOk(i)) return false;
-  }
-  return true;
-}
-
-function syncSidebar() {
-  const subjects   = boxes.filter(b => b.mode === 'subject' && b.imageIndex === 0);
-  const accessories = boxes.filter(b => b.mode === 'accessory');
-
-  const gateTip = document.getElementById('subjectGateTip');
-  if (gateTip) {
-    if (subjects.length > 0) {
-      gateTip.classList.add('ready');
-      gateTip.innerHTML = 'Primary confirmed. You can continue now<span class="proto-anno proto-anno--inline">主体已确认，可以继续下一步</span>';
-    } else {
-      gateTip.classList.remove('ready');
-      gateTip.innerHTML = 'Add one primary box to continue<span class="proto-anno proto-anno--inline">请先框选一个主商品才能继续</span>';
-    }
-  }
-
-  renderBoxList(
-    document.getElementById('subjectItems'),
-    subjects,
-    'No primary box yet<span class="proto-anno proto-anno--block">还没有主商品框</span>'
-  );
-  renderBoxList(
-    document.getElementById('accessoryItems'),
-    accessories,
-    'No accessory boxes yet<span class="proto-anno proto-anno--block">暂未添加配件框</span>'
-  );
-
-  updateBboxNavButtons();
-}
-
-/* ════ UTILITIES ════ */
 function relabelAccessories() {
   const byIdx = {};
   boxes.filter(b => b.mode === 'accessory').forEach(b => {
@@ -1804,11 +1444,14 @@ function relabelAccessories() {
 }
 
 function removeBox(id) {
+  const b = boxes.find(b => b.id === id);
+  const cardIdx = b ? b.imageIndex : null;
   boxes = boxes.filter(b => b.id !== id);
   if (selectedId === id) selectedId = null;
   relabelAccessories();
-  renderAll();
-  syncSidebar();
+  if (cardIdx !== null) renderCardBoxes(cardIdx);
+  updateCardFocus();
+  syncSidebar3();
 }
 
 function eraseSelected() {
@@ -1816,18 +1459,18 @@ function eraseSelected() {
 }
 
 function confirmSubject() {
-  if (!(subjectBoxesOk() && allAccessoryStepsResolved())) return;
+  if (!subjectBoxesOk()) return;
   goState(4);
 }
 
-/* ════ INIT ════ */
+
 /* ════════════════════ AUTO PROCESS & ADVANCED MODE ════════════════════ */
 let autoProcess = true;
 let advancedMode = false;
 let advancedAnalysisConfirmed = false;
 let advTimers = [];
 let advAccNextId = 1;
-let advAccList = []; // [{id}]
+let advAccList = [];
 
 function advAccSrc() {
   if (UPLOAD_IMAGES.length <= 1) return UPLOAD_IMAGES[0];
@@ -1861,19 +1504,15 @@ document.getElementById('autoProcessToggle').addEventListener('click', function 
 document.getElementById('advModeSel').addEventListener('change', setAdvModeFromSelect);
 syncAutoProcessToggle();
 
-/* ── Called when state reaches 4 — trigger backfill if advanced ON ── */
 function onState4() {
   if (!advancedMode) return;
   advancedAnalysisConfirmed = false;
-  // Reset and show section
   resetAdvSection();
   document.getElementById('advSection').classList.add('show');
-  // Start backfill sequence
   advTimers.forEach(clearTimeout); advTimers = [];
-  // Step 1: Primary recognition (scan → fill)
+
   const primaryThumb = document.getElementById('advPrimaryThumb');
   primaryThumb.classList.add('recognizing');
-
   advTimers.push(setTimeout(() => {
     const img = document.getElementById('advPrimaryImg');
     img.src = UPLOAD_IMAGES[0];
@@ -1883,14 +1522,12 @@ function onState4() {
     setTimeout(() => primaryThumb.classList.remove('just-filled'), 700);
   }, 1000));
 
-  // Step 2: Add one accessory thumb + scan → fill
   advTimers.push(setTimeout(() => {
     const accId = advAccNextId++;
     advAccList.push({ id: accId });
     const thumb = createAccThumb(accId);
     const addBtn = document.getElementById('advAccAddBtn');
     document.getElementById('advAccRow').insertBefore(thumb, addBtn);
-    // Start recognition on the new thumb
     thumb.classList.add('recognizing');
     advTimers.push(setTimeout(() => {
       const img = thumb.querySelector('img');
@@ -1904,9 +1541,8 @@ function onState4() {
 function syncState4AdvancedGate() {
   const autoRow = document.getElementById('ss4AutoRow');
   const confirmBlock = document.getElementById('advConfirmBlock');
-  const tip = document.getElementById('ss4Tip');
   const btn = document.getElementById('ss4ConfirmBtn');
-  if (!autoRow || !confirmBlock || !tip || !btn) return;
+  if (!autoRow || !confirmBlock || !btn) return;
 
   if (curState !== 4 || !advancedMode) {
     autoRow.style.display = '';
@@ -1922,14 +1558,15 @@ function syncState4AdvancedGate() {
   confirmBlock.setAttribute('aria-hidden', 'false');
 
   if (!advancedAnalysisConfirmed) {
-    tip.innerHTML = 'Finish the settings above (primary, accessories, and related options). When you’re ready, confirm to proceed to <strong>image analysis</strong> — the next step before generation.<span class="proto-anno proto-anno--block">请先在上方完成主商品、配件及相关参数；确认后将进入下一步「图片分析」（生图前的环节）。</span>';
     btn.hidden = false;
     btn.disabled = false;
     return;
   }
 
-  tip.innerHTML = 'Image analysis is running in the background. This prototype hides the chat UI.<span class="proto-anno proto-anno--block">图片分析已在后台进行；本原型不展示对话界面。</span>';
   btn.hidden = true;
+  confirmBlock.classList.remove('show');
+  confirmBlock.setAttribute('aria-hidden', 'true');
+  autoRow.style.display = '';
 }
 
 function confirmAdvancedGeneration() {
@@ -1955,7 +1592,6 @@ function advAddAcc() {
   advAccList.push({ id });
   const thumb = createAccThumb(id);
   document.getElementById('advAccRow').insertBefore(thumb, document.getElementById('advAccAddBtn'));
-  // Simulate recognition
   thumb.classList.add('recognizing');
   setTimeout(() => {
     const img = thumb.querySelector('img');
@@ -1966,41 +1602,16 @@ function advAddAcc() {
 }
 
 function resetAdvSection() {
-  // Primary thumb
   const pt = document.getElementById('advPrimaryThumb');
   pt.classList.remove('filled', 'recognizing', 'just-filled');
   document.getElementById('advPrimaryImg').src = '';
-  // Accessories
   advAccList = [];
   advAccNextId = 1;
   document.getElementById('advAccRow').querySelectorAll('.adv-acc-thumb').forEach(el => el.remove());
 }
 
-/* ════ ADD INFO MODAL (disabled in DOM; stubs keep calls safe) ════ */
-let _modalAccId = null;
-
-function openAddInfoModal(/* accId */) { /* hidden */ }
-
-function closeAddInfoModal() {
-  _modalAccId = null;
-  const m = document.getElementById('addInfoModal');
-  if (m) m.classList.add('hidden');
-}
-
-function confirmAddInfo() {
-  closeAddInfoModal();
-}
-
-(function () {
-  const m = document.getElementById('addInfoModal');
-  if (m) m.addEventListener('click', e => {
-    if (e.target === m) closeAddInfoModal();
-  });
-})();
-
+/* ════ INIT ════ */
 syncPrimaryStageImages();
-applyManualStageImage();
-syncManualBoxChrome();
 updateSs1Lead();
 goState(1);
 startProcAnimation();

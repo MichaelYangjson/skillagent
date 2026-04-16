@@ -380,19 +380,54 @@ body {
 .ss4-confirm-btn:disabled { background: #e0e0e0; color: #b0b0b0; cursor: not-allowed; }
 .ss4-confirm-btn .proto-anno--block { margin-top: 2px; font-size: 9px; color: rgba(255,255,255,.72); }
 .ss4-confirm-btn:disabled .proto-anno--block { color: #9ca3af; }
-
+.ss4-secondary-btn {
+  width: 100%; margin-bottom: 8px;
+  border: 1px solid #e5e7eb; background: #fff; color: #475569;
+  border-radius: 10px; padding: 9px 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s, color .15s;
+}
+.ss4-secondary-btn:hover { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+.ss4-secondary-btn .proto-anno--block { margin-top: 2px; font-size: 9px; color: #94a3b8; }
+.cutout-review-section {
+  width: 100%;
+  margin-bottom: 14px;
+}
+.cutout-review-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 10px;
+}
+.cutout-review-title {
+  font-size: 12px; font-weight: 700; color: #0f172a; letter-spacing: .01em;
+}
+.cutout-review-subtitle {
+  font-size: 10px; color: #94a3b8; line-height: 1.4;
+}
+.cutout-review-grid {
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 18px;
+  overflow: visible;
+}
 .cutout-card {
-  width: 230px; min-height: 248px; border-radius: 14px; overflow: hidden; position: relative;
-  background: #fff; flex-shrink: 0;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
-  padding: 14px 14px 12px;
-  transition: box-shadow .2s;
+  width: auto; min-width: 0; min-height: 0; border-radius: 0; overflow: visible; position: relative;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  transition: opacity .2s, transform .2s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 .cutout-card.focus {
-  box-shadow: 0 0 0 2.5px #3b82f6, 0 4px 24px rgba(59,130,246,0.2);
+  transform: translateY(-1px);
 }
 .cutout-stage {
-  height: 188px; border-radius: 12px; position: relative; overflow: hidden;
+  border-radius: 12px; position: relative; overflow: hidden;
+}
+.cutout-result-stage {
   background-color: #fff;
   background-image:
     linear-gradient(45deg, #eef2f7 25%, transparent 25%),
@@ -403,11 +438,75 @@ body {
   background-position: 0 0, 0 9px, 9px -9px, -9px 0;
   border: 1px solid #e5e7eb;
   display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 24px rgba(15,23,42,.08);
 }
 .cutout-crop { background-repeat: no-repeat; flex-shrink: 0; }
-.cutout-meta { padding-top: 10px; }
+.cutout-meta { padding-top: 10px; min-width: 0; max-width: 160px; }
 .cutout-title { font-size: 12px; font-weight: 600; color: #111827; }
 .cutout-sub { margin-top: 4px; font-size: 10px; color: #94a3b8; line-height: 1.35; }
+.cutout-card:not(.focus).is-dimmed { opacity: .72; }
+.cutout-card.focus .cutout-result-stage {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(59,130,246,.18), 0 10px 28px rgba(59,130,246,.14);
+}
+
+.source-reference {
+  width: 100%;
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 2px 16px rgba(15,23,42,.05);
+}
+.source-reference-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 10px;
+}
+.source-reference-strip {
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.source-reference-card {
+  width: 248px;
+  flex: 0 0 248px;
+}
+.source-reference-card.is-active .source-reference-meta {
+  color: #2563eb;
+}
+.source-reference-title {
+  font-size: 12px; font-weight: 700; color: #0f172a;
+}
+.source-reference-meta {
+  font-size: 10px; color: #94a3b8; margin-bottom: 8px;
+}
+.source-reference-stage {
+  height: 168px; position: relative; overflow: hidden;
+  border-radius: 12px; border: 1px solid #e5e7eb; background: #f1f5f9;
+}
+.source-reference-stage img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+}
+.source-reference-box {
+  position: absolute; border-radius: 10px; pointer-events: none;
+  border: 2.5px solid currentColor;
+  box-shadow: 0 0 0 999px rgba(15,23,42,.18), 0 0 0 1px rgba(255,255,255,.35) inset;
+}
+.source-reference-box.is-secondary {
+  border-width: 1.5px;
+  opacity: .22;
+  box-shadow: none;
+}
+.source-reference-chip {
+  position: absolute; top: 8px; left: 8px;
+  background: rgba(255,255,255,.92); color: #0f172a;
+  border: 1px solid rgba(226,232,240,.95); border-radius: 999px;
+  padding: 4px 8px; font-size: 10px; font-weight: 700; line-height: 1;
+  box-shadow: 0 2px 8px rgba(15,23,42,.08);
+}
 
 .ai-badge { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; background: #f8f8f8; border: 1px solid #ebebeb; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; color: #333; margin-bottom: 12px; user-select: none; }
 .ai-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background .3s; }
@@ -803,6 +902,10 @@ body {
           <span id="ss4Lead">Generating cutout previews…<span class="proto-anno proto-anno--inline">正在生成抠图预览</span></span>
         </div>
         <div class="ss4-result-list" id="ss4ResultList"></div>
+        <button type="button" class="ss4-secondary-btn" id="adjustRegionsBtn" onclick="returnToRegionReview()">
+          Adjust Regions
+          <span class="proto-anno proto-anno--block">返回重新调整选框</span>
+        </button>
         <button type="button" class="ss4-confirm-btn" id="cutoutConfirmBtn" onclick="confirmCutoutResults()" disabled>
           Confirm Cutouts
           <span class="proto-anno proto-anno--block">确认抠图预览并继续</span>
@@ -1828,15 +1931,89 @@ function prepareCutoutResults() {
   cutoutSelectedId = cutoutResults.length ? cutoutResults[0].id : null;
 }
 
-function getCutoutFillStyle(result, maxDim) {
-  const scale = Math.min(maxDim / result.w, maxDim / result.h);
+function getCutoutFillStyle(result, scale = 1) {
   return {
-    width: `${Math.max(24, result.w * scale)}px`,
-    height: `${Math.max(24, result.h * scale)}px`,
+    width: `${result.w * scale}px`,
+    height: `${result.h * scale}px`,
     backgroundImage: `url(${result.src})`,
     backgroundSize: `${CARD_SIZE * scale}px ${CARD_SIZE * scale}px`,
     backgroundPosition: `${-result.x * scale}px ${-result.y * scale}px`
   };
+}
+
+function getCutoutScaleForMaxDim(result, maxDim) {
+  return Math.min(maxDim / result.w, maxDim / result.h);
+}
+
+function getSourceRegionStyle(result, stageWidth = 232, stageHeight = 148) {
+  const scale = Math.min(stageWidth / CARD_SIZE, stageHeight / CARD_SIZE);
+  const renderedWidth = CARD_SIZE * scale;
+  const renderedHeight = CARD_SIZE * scale;
+  const offsetX = (stageWidth - renderedWidth) / 2;
+  const offsetY = (stageHeight - renderedHeight) / 2;
+  return {
+    left: `${offsetX + result.x * scale}px`,
+    top: `${offsetY + result.y * scale}px`,
+    width: `${result.w * scale}px`,
+    height: `${result.h * scale}px`
+  };
+}
+
+function renderSourceReference(target) {
+  const activeResult = cutoutResults.find(result => result.id === cutoutSelectedId) || cutoutResults[0];
+  if (!activeResult) return;
+
+  const section = document.createElement('div');
+  section.className = 'source-reference';
+
+  const head = document.createElement('div');
+  head.className = 'source-reference-head';
+  head.innerHTML = `<div><div class="source-reference-title">Source Reference</div><div class="cutout-review-subtitle">Keep every source image in place and highlight the selected cutout where it came from.<span class="proto-anno proto-anno--inline">原图始终保持横向固定位置，仅高亮当前抠图的来源区域</span></div></div><div class="cutout-review-subtitle">${UPLOAD_IMAGES.length} images</div>`;
+  section.appendChild(head);
+
+  const strip = document.createElement('div');
+  strip.className = 'source-reference-strip';
+  section.appendChild(strip);
+  target.appendChild(section);
+
+  UPLOAD_IMAGES.forEach((src, imageIndex) => {
+    const card = document.createElement('div');
+    card.className = `source-reference-card${imageIndex === activeResult.imageIndex ? ' is-active' : ''}`;
+
+    const meta = document.createElement('div');
+    meta.className = 'source-reference-meta';
+    meta.textContent = `Image ${imageIndex + 1}`;
+    card.appendChild(meta);
+
+    const stage = document.createElement('div');
+    stage.className = 'source-reference-stage';
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = `Source image ${imageIndex + 1}`;
+    stage.appendChild(img);
+    card.appendChild(stage);
+    strip.appendChild(card);
+
+    const stageWidth = stage.clientWidth || 248;
+
+    cutoutResults
+      .filter(result => result.imageIndex === imageIndex)
+      .forEach(result => {
+      const box = document.createElement('div');
+      const isActive = result.id === activeResult.id;
+      box.className = `source-reference-box${isActive ? '' : ' is-secondary'}`;
+      box.style.color = result.color;
+      Object.assign(box.style, getSourceRegionStyle(result, stageWidth, 168));
+      stage.appendChild(box);
+    });
+
+    if (imageIndex === activeResult.imageIndex) {
+      const chip = document.createElement('div');
+      chip.className = 'source-reference-chip';
+      chip.textContent = activeResult.isPrimary ? 'Primary Source' : 'Selected Source';
+      stage.appendChild(chip);
+    }
+  });
 }
 
 function renderCutoutCanvas(targetId, interactive) {
@@ -1844,16 +2021,29 @@ function renderCutoutCanvas(targetId, interactive) {
   if (!target) return;
   target.innerHTML = '';
 
+  const reviewSection = document.createElement('div');
+  reviewSection.className = 'cutout-review-section';
+
+  const reviewHead = document.createElement('div');
+  reviewHead.className = 'cutout-review-head';
+  reviewHead.innerHTML = `<div><div class="cutout-review-title">Cutout Review</div><div class="cutout-review-subtitle">Review each extracted item first, then use the source image below as reference.<span class="proto-anno proto-anno--inline">先确认抠图结果，再在下方查看原图对照</span></div></div><div class="cutout-review-subtitle">${cutoutResults.length} results</div>`;
+  reviewSection.appendChild(reviewHead);
+
+  const grid = document.createElement('div');
+  grid.className = 'cutout-review-grid';
+
   cutoutResults.forEach(result => {
     const card = document.createElement('div');
-    card.className = 'cutout-card' + (result.id === cutoutSelectedId ? ' focus' : '');
+    card.className = 'cutout-card' + (result.id === cutoutSelectedId ? ' focus' : ' is-dimmed');
     card.dataset.resultId = result.id;
 
     const stage = document.createElement('div');
-    stage.className = 'cutout-stage';
+    stage.className = 'cutout-stage cutout-result-stage';
+    stage.style.width = `${result.w}px`;
+    stage.style.height = `${result.h}px`;
     const crop = document.createElement('div');
     crop.className = 'cutout-crop';
-    Object.assign(crop.style, getCutoutFillStyle(result, 154));
+    Object.assign(crop.style, getCutoutFillStyle(result));
     stage.appendChild(crop);
     card.appendChild(stage);
 
@@ -1871,14 +2061,25 @@ function renderCutoutCanvas(targetId, interactive) {
       });
     }
 
-    target.appendChild(card);
+    grid.appendChild(card);
   });
+
+  reviewSection.appendChild(grid);
+  target.appendChild(reviewSection);
+  renderSourceReference(target);
+}
+
+function returnToRegionReview() {
+  cutoutConfirmed = false;
+  goState(3);
 }
 
 function syncCutoutSidebar() {
   const listEl = document.getElementById('ss4ResultList');
   const confirmBtn = document.getElementById('cutoutConfirmBtn');
+  const adjustBtn = document.getElementById('adjustRegionsBtn');
   if (confirmBtn) confirmBtn.disabled = !(cutoutReady && cutoutResults.length);
+  if (adjustBtn) adjustBtn.hidden = false;
   if (!listEl) return;
 
   listEl.innerHTML = '';
@@ -1894,7 +2095,7 @@ function syncCutoutSidebar() {
     thumb.className = 'ss4-result-thumb';
     const fill = document.createElement('div');
     fill.className = 'ss4-result-fill';
-    Object.assign(fill.style, getCutoutFillStyle(result, 28));
+    Object.assign(fill.style, getCutoutFillStyle(result, getCutoutScaleForMaxDim(result, 28)));
     thumb.appendChild(fill);
     row.appendChild(thumb);
 
@@ -1932,6 +2133,7 @@ function startCutoutReview() {
   document.getElementById('ss4ResultList').innerHTML = '';
   if (cutoutConfirmed) {
     document.getElementById('cutoutConfirmBtn').hidden = true;
+    document.getElementById('adjustRegionsBtn').hidden = true;
     document.getElementById('cutoutSpin').className = '';
     document.getElementById('cutoutSpin').innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     document.getElementById('ss4Lead').innerHTML = `Cutout previews confirmed.<span class="proto-anno proto-anno--inline">抠图预览已确认</span>`;
@@ -1942,6 +2144,7 @@ function startCutoutReview() {
   }
 
   document.getElementById('cutoutConfirmBtn').hidden = false;
+  document.getElementById('adjustRegionsBtn').hidden = false;
   document.getElementById('cutoutConfirmBtn').disabled = true;
   document.getElementById('cutoutSpin').className = 'spin spin-sm';
   document.getElementById('cutoutSpin').innerHTML = '';

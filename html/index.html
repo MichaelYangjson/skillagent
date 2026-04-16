@@ -489,6 +489,7 @@ body {
   border: none; background: transparent; padding: 2px; cursor: pointer;
   display: flex; align-items: center; font-family: inherit;
 }
+.auto-process-toggle:disabled { cursor: not-allowed; opacity: .55; }
 .auto-process-toggle:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 12px; }
 .auto-process-track {
   width: 38px; height: 22px; border-radius: 11px; background: #d4d4d4;
@@ -818,7 +819,7 @@ body {
         <div class="input-text">Product: Stanley Quencher H2.0 FlowState Tumbler. Audience: eco-conscious commuters, fitness enthusiasts, and style-driven professionals. Key benefit: long-lasting insulation with grab-and-go portability for daily hydration.<span class="proto-anno proto-anno--block">原型示例商品说明</span></div>
         <div class="input-foot">
           <div class="auto-process-wrap">
-            <span class="auto-process-tip">Auto Process<span class="proto-anno proto-anno--block" style="color:#64748b;font-weight:400;margin-top:2px;">自动处理</span></span>
+            <span class="auto-process-tip" id="autoProcessTip">Auto Process<span class="proto-anno proto-anno--block" style="color:#64748b;font-weight:400;margin-top:2px;">自动处理</span></span>
             <button type="button" class="auto-process-toggle on" id="autoProcessToggle" aria-pressed="true" aria-label="Toggle Auto-Process">
               <span class="auto-process-track"><span class="auto-process-knob"></span></span>
             </button>
@@ -886,6 +887,7 @@ let cutoutSelectedId = null;
 let cutoutReady = false;
 let cutoutConfirmed = false;
 let autoProcess = true;
+let flowConfigLocked = false;
 
 function goState(n) {
   if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
@@ -962,16 +964,21 @@ function startProcAnimation() {
 }
 
 function simulateFlow(aiSuccess) {
+  flowConfigLocked = true;
+  syncAutoProcessToggle();
   goState(1);
-  if (!autoProcess) return;
   autoTimer = setTimeout(() => {
     if (aiSuccess) {
       ensureSeedBoxes();
       goState(2);
-      autoTimer = setTimeout(() => {
-        prepareCutoutResults();
-        goState(4);
-      }, 1800);
+      if (autoProcess) {
+        autoTimer = setTimeout(() => {
+          prepareCutoutResults();
+          goState(4);
+        }, 1800);
+      } else {
+        updateCanvasHint('Regions detected. Review the boxes before generating cutouts.', '区域已识别，请先确认选框，再生成抠图。');
+      }
     } else {
       goState(3);
     }
@@ -1960,12 +1967,21 @@ function confirmCutoutResults() {
 
 function syncAutoProcessToggle() {
   const btn = document.getElementById('autoProcessToggle');
+  const tip = document.getElementById('autoProcessTip');
   if (!btn) return;
   btn.classList.toggle('on', autoProcess);
   btn.setAttribute('aria-pressed', autoProcess ? 'true' : 'false');
+  btn.disabled = flowConfigLocked;
+  btn.setAttribute('aria-label', flowConfigLocked ? 'Auto Process is locked after the run starts' : 'Toggle Auto-Process');
+  if (tip) {
+    tip.innerHTML = flowConfigLocked
+      ? 'Auto Process Locked<span class="proto-anno proto-anno--block" style="color:#64748b;font-weight:400;margin-top:2px;">流程开始后不可修改</span>'
+      : 'Auto Process<span class="proto-anno proto-anno--block" style="color:#64748b;font-weight:400;margin-top:2px;">自动处理</span>';
+  }
 }
 
 document.getElementById('autoProcessToggle').addEventListener('click', function () {
+  if (flowConfigLocked) return;
   autoProcess = !autoProcess;
   syncAutoProcessToggle();
 });

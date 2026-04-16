@@ -74,8 +74,8 @@ body {
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
 }
-/* State 3: allow vertical scroll if cards overflow */
-.canvas.state3 { overflow-y: auto; align-items: flex-start; }
+/* Review states: allow vertical scroll if cards overflow */
+.canvas.state-grid { overflow-y: auto; align-items: flex-start; }
 
 /* Canvas hint */
 .canvas-hint {
@@ -103,18 +103,28 @@ body {
   min-height: 100%;
 }
 
+#cs4 {
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 20px;
+  padding: 52px 24px 24px;
+  width: 100%;
+  min-height: 100%;
+}
+
 .pcard {
-  width: 210px; height: 210px; border-radius: 14px; overflow: hidden; position: relative;
-  background: #fff; flex-shrink: 0;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
+  width: 210px; height: 210px; border-radius: 0; overflow: visible; position: relative;
+  background: transparent; flex-shrink: 0;
+  box-shadow: none;
   display: flex; align-items: center; justify-content: center;
   transition: box-shadow .2s;
 }
-.pcard:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.06); }
+.pcard:hover { box-shadow: none; }
 
-/* State 3 card: slightly smaller so 3 fit easily */
+/* State 3 card: larger review canvas */
 #cs3 .pcard {
-  width: 190px; height: 190px;
+  width: 252px; height: 252px;
 }
 
 /* Card focus ring when a box on that card is selected */
@@ -130,18 +140,13 @@ body {
   user-select: none;
   z-index: 8;
 }
-
-/* Card role label at bottom */
-.bbox-card-label {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 18px 8px 7px;
-  font-size: 10px; font-weight: 600; color: #fff;
-  background: linear-gradient(to top, rgba(0,0,0,.45) 0%, transparent 100%);
-  pointer-events: none; z-index: 9;
-  border-radius: 0 0 14px 14px;
-  text-align: center; letter-spacing: .01em;
+.bbox-selection {
+  fill: rgba(59,130,246,0.12);
+  stroke: #3b82f6;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
 }
-.bbox-card-label .proto-anno { color: rgba(255,255,255,.6); display: inline; margin-left: 4px; font-size: 9px; }
 
 /* Processing overlay */
 .proc-overlay {
@@ -177,7 +182,15 @@ body {
 .bt-size-wrap {
   display: flex; align-items: center; gap: 10px; padding: 0 4px;
 }
-.bt-size-label { font-size: 12px; color: #555; white-space: nowrap; font-weight: 500; }
+.bt-size-label { font-size: 12px; color: #111827; white-space: nowrap; font-weight: 600; }
+.bt-merge-btn {
+  border: 1px solid #1a1a1a; background: #1a1a1a; color: #fff;
+  border-radius: 12px; padding: 0 18px; min-height: 40px;
+  font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .12s;
+}
+.bt-merge-btn:hover:not(:disabled) { background: #333; border-color: #333; transform: translateY(-1px); }
+.bt-merge-btn:disabled { opacity: .45; cursor: not-allowed; }
 
 /* Custom range slider */
 .bt-slider {
@@ -281,6 +294,39 @@ body {
   line-height: 1.25;
 }
 
+.ss3-box-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+.ss3-box-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 10px;
+  background: #fafafa; border: 1px solid #f0f0f0;
+  font-size: 12px; cursor: pointer; transition: background .12s, border-color .12s;
+}
+.ss3-box-row:hover { background: #f3f4f6; border-color: #e5e7eb; }
+.ss3-box-row.focus { background: #eff6ff; border-color: #93c5fd; }
+.ss3-box-row.multi-focus { background: #eef2ff; border-color: #c7d2fe; }
+.ss3-box-swatch {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0; box-shadow: 0 0 0 2px rgba(255,255,255,.9);
+}
+.ss3-box-body { flex: 1; min-width: 0; }
+.ss3-box-title { font-size: 11.5px; font-weight: 600; color: #111827; line-height: 1.25; }
+.ss3-box-actions-row { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ss3-pill-btn {
+  border: 1px solid #dbe3ee; background: #fff; color: #334155;
+  border-radius: 999px; padding: 4px 8px; font-size: 10px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s, color .15s;
+}
+.ss3-pill-btn:hover { background: #f8fafc; border-color: #bfdbfe; color: #1d4ed8; }
+.ss3-pill-btn.is-primary {
+  background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; cursor: default;
+}
+.ss3-icon-btn {
+  width: 24px; height: 24px; border-radius: 999px; border: 1px solid #f1d0d0;
+  background: #fff5f5; color: #dc2626; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .15s, border-color .15s;
+}
+.ss3-icon-btn:hover { background: #fee2e2; border-color: #f5b3b3; }
+
 .kbd-hint { font-size: 10.5px; color: #9ca3af; margin-top: 12px; text-align: center; line-height: 1.45; }
 .kbd-hint kbd { background: #f0f0f0; border: 1px solid #e0e0e0; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-family: inherit; }
 
@@ -298,6 +344,70 @@ body {
   background: #e0e0e0; color: #b0b0b0; cursor: not-allowed; opacity: 1;
 }
 .ss3-confirm-btn:disabled .proto-anno--block { color: #9ca3af; }
+
+.ss4-result-list { display: flex; flex-direction: column; gap: 7px; margin: 12px 0; }
+.ss4-result-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 10px;
+  background: #fafafa; border: 1px solid #f0f0f0;
+  cursor: pointer; transition: background .12s, border-color .12s;
+}
+.ss4-result-row:hover { background: #f3f4f6; border-color: #e5e7eb; }
+.ss4-result-row.focus { background: #eff6ff; border-color: #93c5fd; }
+.ss4-result-thumb {
+  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+  border: 1px solid #e5e7eb;
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
+    linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
+    linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+  overflow: hidden; position: relative;
+}
+.ss4-result-fill { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-repeat: no-repeat; }
+.ss4-result-body { flex: 1; min-width: 0; }
+.ss4-result-title { font-size: 11.5px; font-weight: 600; color: #111827; line-height: 1.25; }
+.ss4-result-meta { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+.ss4-confirm-btn {
+  width: 100%; background: #1a1a1a; color: #fff; border: none;
+  border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: background .15s;
+}
+.ss4-confirm-btn:hover:not(:disabled) { background: #333; }
+.ss4-confirm-btn:disabled { background: #e0e0e0; color: #b0b0b0; cursor: not-allowed; }
+.ss4-confirm-btn .proto-anno--block { margin-top: 2px; font-size: 9px; color: rgba(255,255,255,.72); }
+.ss4-confirm-btn:disabled .proto-anno--block { color: #9ca3af; }
+
+.cutout-card {
+  width: 230px; min-height: 248px; border-radius: 14px; overflow: hidden; position: relative;
+  background: #fff; flex-shrink: 0;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
+  padding: 14px 14px 12px;
+  transition: box-shadow .2s;
+}
+.cutout-card.focus {
+  box-shadow: 0 0 0 2.5px #3b82f6, 0 4px 24px rgba(59,130,246,0.2);
+}
+.cutout-stage {
+  height: 188px; border-radius: 12px; position: relative; overflow: hidden;
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #eef2f7 25%, transparent 25%),
+    linear-gradient(-45deg, #eef2f7 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #eef2f7 75%),
+    linear-gradient(-45deg, transparent 75%, #eef2f7 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+  border: 1px solid #e5e7eb;
+  display: flex; align-items: center; justify-content: center;
+}
+.cutout-crop { background-repeat: no-repeat; flex-shrink: 0; }
+.cutout-meta { padding-top: 10px; }
+.cutout-title { font-size: 12px; font-weight: 600; color: #111827; }
+.cutout-sub { margin-top: 4px; font-size: 10px; color: #94a3b8; line-height: 1.35; }
 
 .ai-badge { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; background: #f8f8f8; border: 1px solid #ebebeb; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; color: #333; margin-bottom: 12px; user-select: none; }
 .ai-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background .3s; }
@@ -608,19 +718,16 @@ body {
     <!-- ── STATE 3: Multi-card BBox (populated by JS) ── -->
     <div class="cards-wrap cs" id="cs3"></div>
 
-    <!-- ── STATE 4: Confirmed ── -->
-    <div class="cards-wrap cs" id="cs4">
-      <div class="pcard" style="background:#fff;position:relative;">
-        <img id="stageImg4" data-stage-primary="1"
-             src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
-             alt="Product confirmed" style="width:100%;height:100%;object-fit:contain;padding:10px;"/>
-      </div>
-    </div>
+    <!-- ── STATE 4: Cutout review ── -->
+    <div class="cards-wrap cs" id="cs4"></div>
 
     <!-- Bottom BBox Toolbar (state 3) — size slider only -->
     <div id="bboxToolbar">
-      <div class="bt-card bt-size-wrap">
-        <span class="bt-size-label">Box size<span class="proto-anno proto-anno--inline">选框大小</span></span>
+      <div class="bt-card bt-size-wrap" id="bboxMergePanel" style="display:none;">
+        <button type="button" class="bt-merge-btn" id="bboxMergeBtn">Merge</button>
+      </div>
+      <div class="bt-card bt-size-wrap" id="bboxSizePanel">
+        <span class="bt-size-label">Size<span class="proto-anno proto-anno--inline">大小</span></span>
         <input type="range" class="bt-slider" id="bboxSizeSlider" min="40" max="240" value="110" disabled>
       </div>
     </div>
@@ -629,7 +736,7 @@ body {
   <!-- RIGHT PANEL -->
   <aside class="rp">
     <div class="rp-hdr">
-      <span class="rp-title">Untitled<span class="proto-anno proto-anno--inline">未命名</span></span>
+      <span class="rp-title">Untitled Draft<span class="proto-anno proto-anno--inline">未命名草稿</span></span>
       <span class="rp-close"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></span>
     </div>
 
@@ -637,26 +744,26 @@ body {
     <div class="rp-sec">
       <div class="ai-badge">
         <div class="ai-dot processing" id="aiDot"></div>
-        <span>AI Processing</span><span class="proto-anno proto-anno--inline">AI 处理</span>
+        <span>AI Processing</span><span class="proto-anno proto-anno--inline">AI 处理中</span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
       </div>
 
       <!-- STATE 1 -->
       <div class="ss active sbody" id="ss1">
-        <div class="srow"><div class="spin" style="margin-top:2px;"></div><span><span id="ss1Lead">Image received! Let's get it <strong style="color:#1a1a1a;">ready for the spotlight.</strong></span><span class="proto-anno proto-anno--block" style="margin-top:6px;">已收到图片，准备上架展示</span></span></div>
+        <div class="srow"><div class="spin" style="margin-top:2px;"></div><span><span id="ss1Lead">Images uploaded. We’re preparing them for review.</span><span class="proto-anno proto-anno--block" style="margin-top:6px;">图片已上传，正在准备识别结果。</span></span></div>
         <div class="psteps" id="procSteps">
           <div class="pstep running" id="pstep0"><div class="spin spin-sm pstep-icon"></div>Removing watermarks<span class="ell-1">.</span><span class="ell-2">.</span><span class="ell-3">.</span></div>
           <div class="pstep" id="pstep1"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Removing background</div>
           <div class="pstep" id="pstep2"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Enhancing quality</div>
           <div class="pstep" id="pstep3"><svg class="pstep-icon" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#e8e8e8"/></svg>Identifying object</div>
         </div>
-        <div class="proto-anno proto-anno--block" style="margin-top:10px;">步骤：去水印 → 去背景 → 增强画质 → 识别物体</div>
+        <div class="proto-anno proto-anno--block" style="margin-top:10px;">流程：去水印 → 去背景 → 增强画质 → 识别商品区域</div>
       </div>
 
       <!-- STATE 2 -->
       <div class="ss sbody" id="ss2">
-        <div class="srow" style="margin-bottom:6px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-top:2px;"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="green">Product ready<span class="proto-anno proto-anno--inline">商品就绪</span></span></div>
-        <div class="srow muted"><div class="spin spin-sm" style="margin-top:1px;"></div><span>Continuing to generation…<span class="proto-anno proto-anno--inline">继续进入生成</span></span></div>
+        <div class="srow" style="margin-bottom:6px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-top:2px;"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="green">Regions detected<span class="proto-anno proto-anno--inline">已识别区域</span></span></div>
+        <div class="srow muted"><div class="spin spin-sm" style="margin-top:1px;"></div><span>Opening cutout review…<span class="proto-anno proto-anno--inline">即将进入抠图确认</span></span></div>
       </div>
 
       <!-- STATE 3: all-at-once bbox review -->
@@ -668,89 +775,55 @@ body {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <div class="ss3-ai-unclear-body">
-              BeePop Agent couldn't confidently locate the product. Please confirm or adjust the boxes on the canvas.
-              <span class="proto-anno proto-anno--block">BeePop Agent 未能稳定定位商品，请在画布上确认或调整选框。</span>
+              Some regions still need review. Please adjust the boxes on the canvas before continuing.
+              <span class="proto-anno proto-anno--block">部分区域仍需确认，请先在画布上调整选框，再继续下一步。</span>
             </div>
           </div>
 
-          <div class="ss3-img-list" id="ss3ImgList"></div>
+          <div class="ss3-box-list" id="ss3BoxList"></div>
 
           <!-- Confirm button -->
           <button type="button" class="ss3-confirm-btn" id="bboxConfirmBtn" onclick="confirmSubject()" disabled>
-            Confirm &amp; Continue
-            <span class="proto-anno proto-anno--block">确认所有选框并进入下一步</span>
+            Confirm Regions
+            <span class="proto-anno proto-anno--block">确认区域后生成抠图预览</span>
           </button>
 
           <div class="kbd-hint">
-            Click to place · drag · <kbd>Del</kbd> remove
-            <span class="proto-anno proto-anno--block">单击放置 · 拖拽 · Del 删除</span>
+            Click to add · drag to adjust · <kbd>Shift</kbd>/<kbd>Cmd</kbd> drag or click to multi-select · <kbd>Del</kbd> remove
+            <span class="proto-anno proto-anno--block">点击新增 · 拖拽调整 · 按住 Shift 或 Command 拖拽/点击多选 · Del 删除</span>
           </div>
         </div>
       </div>
 
       <!-- STATE 4 -->
       <div class="ss sbody" id="ss4">
-        <div class="srow" style="margin-bottom:6px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-top:2px;"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="green">Object confirmed<span class="proto-anno proto-anno--inline">物体已确认</span></span></div>
-        <div class="srow muted" id="ss4AutoRow"><div class="spin spin-sm" style="margin-top:1px;"></div><span>Moving to generation…<span class="proto-anno proto-anno--inline">进入生成</span></span></div>
+        <div class="srow" style="margin-bottom:6px;">
+          <div class="spin spin-sm" style="margin-top:2px;" id="cutoutSpin"></div>
+          <span id="ss4Lead">Generating cutout previews…<span class="proto-anno proto-anno--inline">正在生成抠图预览</span></span>
+        </div>
+        <div class="ss4-result-list" id="ss4ResultList"></div>
+        <button type="button" class="ss4-confirm-btn" id="cutoutConfirmBtn" onclick="confirmCutoutResults()" disabled>
+          Confirm Cutouts
+          <span class="proto-anno proto-anno--block">确认抠图预览并继续</span>
+        </button>
       </div>
+
     </div>
 
     <div class="rp-spacer"></div>
 
-    <!-- ADVANCED SECTION -->
-    <div class="adv-section" id="advSection">
-      <div style="padding: 14px 16px 0; border-top: 1px solid #f0f0f0;">
-        <div class="adv-sec-hdr">
-          <div class="adv-sec-title">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            Primary<span class="proto-anno proto-anno--inline">主商品</span>
-          </div>
-        </div>
-        <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:14px;">
-          <div class="adv-primary-thumb" id="advPrimaryThumb">
-            <div class="adv-scan-line"></div>
-            <img id="advPrimaryImg" src="" alt="Primary"/>
-            <span class="adv-star">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            </span>
-            <svg class="adv-ph-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          </div>
-        </div>
-        <div class="adv-sec-hdr">
-          <div class="adv-sec-title">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            Accessories<span class="proto-anno proto-anno--inline">配件</span>
-          </div>
-        </div>
-        <div class="adv-acc-row" id="advAccRow">
-          <div class="adv-acc-add-btn" id="advAccAddBtn" onclick="advAddAcc()">+</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="adv-confirm-block" id="advConfirmBlock" aria-hidden="true">
-      <div class="adv-confirm-inner">
-        <button type="button" class="bbox-nav-btn bbox-nav-btn--primary" id="ss4ConfirmBtn" onclick="confirmAdvancedGeneration()">Continue<span class="proto-anno proto-anno--block">确认设置并进入图片分析</span></button>
-      </div>
-    </div>
-
     </div><!-- /rp-scroll -->
     <div class="rp-input" id="rpInput">
       <div class="input-card">
-        <div class="input-text">Product: Stanley Quencher H2.0 FlowState™ Tumbler. Audience: Eco-conscious commuters, fitness enthusiasts, and trendy professionals. Benefit: Superior thermal retention and effortless portability for daily hydration.<span class="proto-anno proto-anno--block">原型示例商品 briefing</span></div>
+        <div class="input-text">Product: Stanley Quencher H2.0 FlowState Tumbler. Audience: eco-conscious commuters, fitness enthusiasts, and style-driven professionals. Key benefit: long-lasting insulation with grab-and-go portability for daily hydration.<span class="proto-anno proto-anno--block">原型示例商品说明</span></div>
         <div class="input-foot">
           <div class="auto-process-wrap">
-            <span class="auto-process-tip">Auto-Process<span class="proto-anno proto-anno--block" style="color:#64748b;font-weight:400;margin-top:2px;">自动处理</span></span>
+            <span class="auto-process-tip">Auto Process<span class="proto-anno proto-anno--block" style="color:#64748b;font-weight:400;margin-top:2px;">自动处理</span></span>
             <button type="button" class="auto-process-toggle on" id="autoProcessToggle" aria-pressed="true" aria-label="Toggle Auto-Process">
               <span class="auto-process-track"><span class="auto-process-knob"></span></span>
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <select id="advModeSel" class="auto-sel" title="Workflow mode">
-              <option value="auto">Auto</option>
-              <option value="advanced">Advanced</option>
-            </select>
-            <span class="proto-anno proto-anno--inline" style="max-width:72px;line-height:1.2;">自动 / 高级</span>
             <div class="send-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
           </div>
         </div>
@@ -762,74 +835,99 @@ body {
 <!-- DEMO NAV -->
 <div class="demo-nav">
   <span class="dnlbl">Simulate<span class="proto-anno proto-anno--inline">模拟流程</span></span>
-  <button class="dnb sim" onclick="simulateFlow(true)">▶ AI success<span class="proto-anno">识别成功</span></button>
-  <button class="dnb sim" onclick="simulateFlow(false)">▶ AI failed<span class="proto-anno">识别失败</span></button>
+  <button class="dnb sim" onclick="simulateFlow(true)">▶ AI Success<span class="proto-anno">识别成功</span></button>
+  <button class="dnb sim" onclick="simulateFlow(false)">▶ AI Retry Needed<span class="proto-anno">需要人工调整</span></button>
   <div class="demo-sep"></div>
   <span class="dnlbl">Jump<span class="proto-anno proto-anno--inline">直跳</span></span>
   <button class="dnb" id="nb1" onclick="goState(1)">① Processing<span class="proto-anno">处理中</span></button>
-  <button class="dnb" id="nb2" onclick="goState(2)">② Detected<span class="proto-anno">识别成功</span></button>
-  <button class="dnb" id="nb3" onclick="goState(3)">③ Manual box<span class="proto-anno">手动框选</span></button>
-  <button class="dnb" id="nb4" onclick="goState(4)">④ Confirmed<span class="proto-anno">确认成功</span></button>
+  <button class="dnb" id="nb2" onclick="goState(2)">② Detected<span class="proto-anno">已识别区域</span></button>
+  <button class="dnb" id="nb3" onclick="goState(3)">③ Review Boxes<span class="proto-anno">确认选框</span></button>
+  <button class="dnb" id="nb4" onclick="goState(4)">④ Review Cutouts<span class="proto-anno">确认抠图</span></button>
 </div>
 
 <script>
 /* ════════════════════ STATE MACHINE ════════════════════ */
 let curState = 0;
 let autoTimer = null;
+let cutoutTimer = null;
 
 const STEP_LABELS = [
   ['Removing watermarks', 'Watermark removed'],
   ['Removing background', 'Background removed'],
-  ['Enhancing quality',   'Quality enhanced'],
-  ['Identifying object',  'Object identified'],
+  ['Enhancing quality', 'Quality enhanced'],
+  ['Identifying objects', 'Objects identified'],
 ];
 let stepTimers = [];
 
+/* ════════════════════ UPLOAD SET ════════════════════ */
+const UPLOAD_IMAGES = [
+  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
+  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
+  'https://picsum.photos/seed/beepop-proto-upload3/400/400',
+];
+
+const PRIMARY_COLOR = '#3b82f6';
+const ACCESSORY_COLORS = ['#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#10b981'];
+const HANDLE_SIZE = 7;
+const MIN_BOX = 28;
+const DEFAULT_W = 110;
+const DEFAULT_H = 110;
+const CARD_SIZE = 252;
+const CARD_CX = CARD_SIZE / 2;
+
+let boxes = [];
+let nextId = 1;
+let selectedId = null;
+let selectedIds = [];
+let drag = null;
+let suppressNextCanvasClick = false;
+let cutoutResults = [];
+let cutoutSelectedId = null;
+let cutoutReady = false;
+let cutoutConfirmed = false;
+let autoProcess = true;
+
 function goState(n) {
   if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+  if (cutoutTimer) { clearTimeout(cutoutTimer); cutoutTimer = null; }
   curState = n;
-  advancedAnalysisConfirmed = false;
 
   for (let i = 1; i <= 4; i++) {
-    document.getElementById('cs' + i).classList.toggle('active', i === n);
-    document.getElementById('ss' + i).classList.toggle('active', i === n);
-    document.getElementById('nb' + i).classList.toggle('active', i === n);
+    const cs = document.getElementById('cs' + i);
+    const ss = document.getElementById('ss' + i);
+    const nb = document.getElementById('nb' + i);
+    if (cs) cs.classList.toggle('active', i === n);
+    if (ss) ss.classList.toggle('active', i === n);
+    if (nb) nb.classList.toggle('active', i === n);
   }
 
   const dot = document.getElementById('aiDot');
-  dot.className = 'ai-dot ' + ({1:'processing',2:'success',3:'warn',4:'success'}[n] || 'idle');
+  dot.className = 'ai-dot ' + ({1:'processing', 2:'success', 3:'warn', 4: cutoutConfirmed ? 'success' : 'processing'}[n] || 'idle');
 
   const canvas = document.getElementById('mainCanvas');
-  canvas.classList.toggle('state3', n === 3);
-
-  const hint = document.getElementById('canvasHint');
-  if (n !== 3) {
-    hint.innerHTML = '';
-    hint.classList.remove('show');
-  }
+  canvas.classList.toggle('state-grid', n === 3 || n === 4);
 
   const toolbar = document.getElementById('bboxToolbar');
   if (n === 3) {
     toolbar.classList.add('show');
   } else {
     toolbar.classList.remove('show');
-    selectedId = null;
+    clearSelection();
   }
 
   if (n === 1) startProcAnimation();
-  if (n === 4) onState4();
-  if (n !== 4) document.getElementById('advSection').classList.remove('show');
-
   if (n === 3) {
-    selectedId = null;
-    ensureSubjectAiSeeded();
-    seedAllAccessoryAiIfMulti();
+    cutoutConfirmed = false;
+    ensureSeedBoxes();
+    clearSelection();
     renderState3Canvas();
     syncSidebar3();
-    updateCanvasHint3();
+    updateCanvasHint('Adjust boxes on the canvas, then confirm', '在画布上调整选框后确认');
+  } else if (n === 4) {
+    startCutoutReview();
+  } else {
+    clearCanvasHint();
   }
-
-  syncState4AdvancedGate();
 }
 
 function startProcAnimation() {
@@ -846,7 +944,7 @@ function startProcAnimation() {
     const el = document.getElementById('pstep' + i);
     el.className = 'pstep running';
     el.innerHTML = `<div class="spin spin-sm pstep-icon"></div>${STEP_LABELS[i][0]}<span class="ell-1">.</span><span class="ell-2">.</span><span class="ell-3">.</span>`;
-    document.getElementById('procBar').style.width = ((i + .5) / 4 * 100) + '%';
+    document.getElementById('procBar').style.width = ((i + 0.5) / 4 * 100) + '%';
   }
   function complete(i) {
     const el = document.getElementById('pstep' + i);
@@ -868,21 +966,17 @@ function simulateFlow(aiSuccess) {
   if (!autoProcess) return;
   autoTimer = setTimeout(() => {
     if (aiSuccess) {
+      ensureSeedBoxes();
       goState(2);
-      autoTimer = setTimeout(() => goState(4), 1800);
+      autoTimer = setTimeout(() => {
+        prepareCutoutResults();
+        goState(4);
+      }, 1800);
     } else {
       goState(3);
     }
   }, 3200);
 }
-
-
-/* ════════════════════ UPLOAD SET ════════════════════ */
-const UPLOAD_IMAGES = [
-  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
-  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
-  'https://picsum.photos/seed/beepop-proto-upload3/400/400',
-];
 
 function syncPrimaryStageImages() {
   const u = UPLOAD_IMAGES[0];
@@ -894,129 +988,209 @@ function updateSs1Lead() {
   if (!el) return;
   const n = UPLOAD_IMAGES.length;
   if (n <= 1) {
-    el.innerHTML = `Image received! Let's get it <strong style="color:#1a1a1a;">ready for the spotlight.</strong>`;
+    el.innerHTML = `Image uploaded. We’re preparing it for region review.`;
   } else {
-    el.innerHTML = `Received <strong style="color:#1a1a1a;">${n} images</strong> — first is primary, rest are accessories. Processing each.`;
+    el.innerHTML = `Uploaded <strong style="color:#1a1a1a;">${n} images</strong>. We’ll detect the key regions and let you review each box.`;
   }
 }
 
-function updateCanvasHint3() {
+function updateCanvasHint(main, cn) {
   const hint = document.getElementById('canvasHint');
   if (!hint) return;
-  hint.innerHTML = `<span class="hint-main">Adjust boxes on the canvas, then confirm</span><span class="proto-anno proto-anno--block">在画布上调整选框后确认</span>`;
+  hint.innerHTML = `<span class="hint-main">${main}</span><span class="proto-anno proto-anno--block">${cn}</span>`;
   hint.classList.add('show');
 }
 
+function clearCanvasHint() {
+  const hint = document.getElementById('canvasHint');
+  if (!hint) return;
+  hint.innerHTML = '';
+  hint.classList.remove('show');
+}
 
-/* ════════════════════ BBOX DATA ════════════════════ */
-const SUBJECT_COLORS   = ['#3b82f6', '#8b5cf6', '#10b981'];
-const ACCESSORY_COLORS = ['#f59e0b', '#ef4444', '#ec4899', '#fb923c'];
-const HANDLE_SIZE = 7;
-const MIN_BOX = 28;
-const DEFAULT_W = 110;
-const DEFAULT_H = 110;
-// Card size in state 3 (matches CSS #cs3 .pcard)
-const CARD_SIZE = 190;
-const CARD_CX = CARD_SIZE / 2; // 95
-
-let boxes = [];
-let nextId = 1;
-let selectedId = null;
-let drag = null;
-// drag = null | { mode:'move'|'resize', id, dir?, sx, sy, ox?, oy?, orig?, cardIdx, svgEl }
-
-
-/* ── Seed helpers ── */
-function pushAiBox({ mode, imageIndex, w, h, offsetX, offsetY }) {
-  const ox = offsetX || 0, oy = offsetY || 0;
-  const id = nextId++;
-  const isAccessory = mode === 'accessory';
-  const palette = isAccessory ? ACCESSORY_COLORS : SUBJECT_COLORS;
-  const sameSlot = isAccessory
-    ? boxes.filter(b => b.mode === 'accessory' && b.imageIndex === imageIndex)
-    : boxes.filter(b => b.mode === 'subject' && b.imageIndex === 0);
-  const color = palette[sameSlot.length % palette.length];
-  const label = isAccessory ? `Accessory ${sameSlot.length + 1}` : 'Primary';
-  boxes.push({
-    id, mode, imageIndex: isAccessory ? imageIndex : 0,
-    x: CARD_CX - w / 2 + ox,
-    y: CARD_CX - h / 2 + oy,
-    w, h, color, label,
-    aiSuggested: true
+function sortBoxes(list) {
+  return [...list].sort((a, b) => {
+    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+    return a.imageIndex - b.imageIndex || a.id - b.id;
   });
 }
 
-function ensureSubjectAiSeeded() {
-  if (boxes.some(b => b.mode === 'subject' && b.imageIndex === 0)) return;
-  pushAiBox({ mode: 'subject', imageIndex: 0, w: DEFAULT_W, h: DEFAULT_H });
+function getPrimaryBox() {
+  return boxes.find(box => box.isPrimary) || null;
 }
 
-function ensureAccessoryImageSeeded(imgIdx) {
-  if (imgIdx < 1) return;
-  if (boxes.some(b => b.mode === 'accessory' && b.imageIndex === imgIdx)) return;
-  const o = ((imgIdx % 5) - 2) * 10;
-  pushAiBox({ mode: 'accessory', imageIndex: imgIdx, w: DEFAULT_W, h: DEFAULT_H, offsetX: o, offsetY: Math.round(-o * 0.4) });
+function getSelectedBoxes() {
+  return selectedIds.map(id => boxes.find(box => box.id === id)).filter(Boolean);
 }
 
-function seedAllAccessoryAiIfMulti() {
-  if (UPLOAD_IMAGES.length <= 1) return;
-  for (let i = 1; i < UPLOAD_IMAGES.length; i++) ensureAccessoryImageSeeded(i);
+function getSingleSelectedBox() {
+  if (selectedIds.length !== 1 || selectedId === null) return null;
+  return boxes.find(box => box.id === selectedId) || null;
 }
 
+function isBoxSelected(id) {
+  return selectedIds.includes(id);
+}
+
+function clearSelection() {
+  selectedId = null;
+  selectedIds = [];
+}
+
+function normalizeSelection() {
+  selectedIds = selectedIds.filter(id => boxes.some(box => box.id === id));
+  if (!selectedIds.length) {
+    selectedId = null;
+    return;
+  }
+  if (!selectedIds.includes(selectedId)) selectedId = selectedIds[selectedIds.length - 1];
+  const active = boxes.find(box => box.id === selectedId);
+  if (!active) {
+    clearSelection();
+    return;
+  }
+  selectedIds = selectedIds.filter(id => {
+    const box = boxes.find(item => item.id === id);
+    return box && box.imageIndex === active.imageIndex;
+  });
+  if (!selectedIds.includes(selectedId)) selectedIds.unshift(selectedId);
+}
+
+function setSingleSelection(id) {
+  if (id === null || id === undefined) {
+    clearSelection();
+    return;
+  }
+  selectedId = id;
+  selectedIds = [id];
+  normalizeSelection();
+}
+
+function toggleBoxSelection(id) {
+  const target = boxes.find(box => box.id === id);
+  if (!target) return;
+  const active = selectedId !== null ? boxes.find(box => box.id === selectedId) : null;
+  if (active && active.imageIndex !== target.imageIndex) {
+    setSingleSelection(id);
+    return;
+  }
+  if (isBoxSelected(id)) {
+    selectedIds = selectedIds.filter(item => item !== id);
+    if (selectedId === id) selectedId = selectedIds[selectedIds.length - 1] ?? null;
+    normalizeSelection();
+    return;
+  }
+  selectedId = id;
+  selectedIds = [...selectedIds, id];
+  normalizeSelection();
+}
+
+function setSelectionForImage(ids, imageIndex) {
+  const valid = ids.filter(id => {
+    const box = boxes.find(item => item.id === id);
+    return box && box.imageIndex === imageIndex;
+  });
+  if (!valid.length) {
+    clearSelection();
+    return;
+  }
+  selectedIds = [...new Set(valid)];
+  selectedId = selectedIds[selectedIds.length - 1];
+  normalizeSelection();
+}
+
+function getDisplayImageOrder() {
+  return UPLOAD_IMAGES.map((_, idx) => idx);
+}
+
+function relabelBoxes() {
+  let accessoryIndex = 1;
+  sortBoxes(boxes).forEach(box => {
+    if (box.isPrimary) {
+      box.label = 'Primary';
+      box.color = PRIMARY_COLOR;
+    } else {
+      box.label = `Accessory ${accessoryIndex++}`;
+      box.color = ACCESSORY_COLORS[(accessoryIndex - 2) % ACCESSORY_COLORS.length];
+    }
+  });
+}
+
+function ensurePrimaryExists() {
+  if (boxes.some(box => box.isPrimary)) return;
+  const fallback = boxes.find(box => box.imageIndex === 0) || sortBoxes(boxes)[0];
+  if (fallback) fallback.isPrimary = true;
+  relabelBoxes();
+}
+
+function pushSeedBox({ imageIndex, w, h, offsetX, offsetY, isPrimary }) {
+  boxes.push({
+    id: nextId++,
+    imageIndex,
+    x: CARD_CX - w / 2 + (offsetX || 0),
+    y: CARD_CX - h / 2 + (offsetY || 0),
+    w,
+    h,
+    aiSuggested: true,
+    label: '',
+    color: PRIMARY_COLOR,
+    isPrimary: !!isPrimary
+  });
+  relabelBoxes();
+}
+
+function ensureSeedBoxes() {
+  if (!boxes.length) {
+    pushSeedBox({ imageIndex: 0, w: DEFAULT_W, h: DEFAULT_H, isPrimary: true });
+    for (let imageIndex = 1; imageIndex < UPLOAD_IMAGES.length; imageIndex++) {
+      const offset = ((imageIndex % 5) - 2) * 8;
+      pushSeedBox({ imageIndex, w: DEFAULT_W, h: DEFAULT_H, offsetX: offset, offsetY: Math.round(offset * -0.35), isPrimary: false });
+    }
+    return;
+  }
+  ensurePrimaryExists();
+}
 
 /* ════════════════════ STATE 3 CANVAS RENDERING ════════════════════ */
 function renderState3Canvas() {
   const cs3 = document.getElementById('cs3');
-  // Remove existing cards but keep any non-card children
   cs3.querySelectorAll('.pcard').forEach(el => el.remove());
 
-  UPLOAD_IMAGES.forEach((src, idx) => {
-    const isSubject = idx === 0;
+  getDisplayImageOrder().forEach(idx => {
+    const src = UPLOAD_IMAGES[idx];
     const card = document.createElement('div');
     card.className = 'pcard';
     card.dataset.cardIdx = idx;
     card.style.background = '#f5f5f5';
 
-    // Product image
     const img = document.createElement('img');
     img.src = src;
-    img.alt = isSubject ? 'Primary' : `Accessory ${idx}`;
-    img.style.cssText = 'width:100%;height:100%;object-fit:contain;padding:10px;position:relative;z-index:0;pointer-events:none;';
+    img.alt = `Image ${idx + 1}`;
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;padding:0;position:relative;z-index:0;pointer-events:none;';
     card.appendChild(img);
 
-    // Role label at bottom
-    const lbl = document.createElement('div');
-    lbl.className = 'bbox-card-label';
-    lbl.innerHTML = isSubject
-      ? `Primary<span class="proto-anno">主商品</span>`
-      : `Accessory ${idx}<span class="proto-anno">配件${idx}</span>`;
-    card.appendChild(lbl);
+    const layer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    layer.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    layer.classList.add('bbox-card-layer');
+    layer.dataset.cardIdx = idx;
 
-    // SVG bbox overlay
-    const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    svgEl.classList.add('bbox-card-layer');
-    svgEl.dataset.cardIdx = idx;
-
-    // Transparent hit background
     const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     bgRect.setAttribute('width', '100%');
     bgRect.setAttribute('height', '100%');
     bgRect.setAttribute('fill', 'transparent');
     bgRect.setAttribute('data-bg', idx);
-    svgEl.appendChild(bgRect);
+    layer.appendChild(bgRect);
 
-    card.appendChild(svgEl);
+    card.appendChild(layer);
     cs3.appendChild(card);
 
-    attachCardBboxEvents(svgEl, idx);
+    attachCardBboxEvents(layer, idx);
     renderCardBoxes(idx);
   });
 
   updateCardFocus();
 }
 
-/* ── SVG helper ── */
 function svgEl(tag, attrs = {}, style = {}) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
@@ -1024,75 +1198,70 @@ function svgEl(tag, attrs = {}, style = {}) {
   return el;
 }
 
-/* ── Render boxes on a single card's SVG ── */
 function renderCardBoxes(cardIdx) {
   const layer = document.querySelector(`.bbox-card-layer[data-card-idx="${cardIdx}"]`);
   if (!layer) return;
 
   layer.querySelectorAll('.bgrp').forEach(el => el.remove());
 
-  boxes.filter(b => b.imageIndex === cardIdx).forEach(b => {
-    const isSel = b.id === selectedId;
+  sortBoxes(boxes.filter(box => box.imageIndex === cardIdx)).forEach(boxData => {
+    const isSel = isBoxSelected(boxData.id);
+    const isActive = boxData.id === selectedId;
     const g = svgEl('g', { class: 'bgrp' });
 
-    // Invisible hit area
     const hit = svgEl('rect', {
-      x: b.x - 4, y: b.y - 4, width: b.w + 8, height: b.h + 8,
-      fill: 'transparent', 'data-role': 'body', 'data-id': b.id
+      x: boxData.x - 4, y: boxData.y - 4, width: boxData.w + 8, height: boxData.h + 8,
+      fill: 'transparent', 'data-role': 'body', 'data-id': boxData.id
     }, { cursor: 'move' });
     g.appendChild(hit);
 
-    // Box rect
-    const box = svgEl('rect', {
-      x: b.x, y: b.y, width: b.w, height: b.h, rx: 5,
-      fill: b.color + (isSel ? '1e' : '0d'),
-      stroke: b.color,
-      'stroke-width': isSel ? 2.5 : 1.8,
+    const boxRect = svgEl('rect', {
+      x: boxData.x, y: boxData.y, width: boxData.w, height: boxData.h, rx: 5,
+      fill: boxData.color + (isSel ? '1e' : '0d'),
+      stroke: boxData.color,
+      'stroke-width': isActive ? 2.8 : (isSel ? 2.2 : 1.8)
     }, { pointerEvents: 'none' });
-    g.appendChild(box);
+    g.appendChild(boxRect);
 
-    // Label badge
-    const LW = Math.max(58, Math.min(110, 8 + b.label.length * 6.2)), LH = 18;
-    const lbg = svgEl('rect', { x: b.x + 5, y: b.y + 5, width: LW, height: LH, rx: 4, fill: b.color }, { pointerEvents: 'none' });
-    g.appendChild(lbg);
-    const ltxt = svgEl('text', {
-      x: b.x + 5 + LW / 2, y: b.y + 16.5,
+    const LW = Math.max(58, Math.min(110, 8 + boxData.label.length * 6.2));
+    const LH = 18;
+    g.appendChild(svgEl('rect', {
+      x: boxData.x + 5, y: boxData.y + 5, width: LW, height: LH, rx: 4, fill: boxData.color
+    }, { pointerEvents: 'none' }));
+
+    const labelText = svgEl('text', {
+      x: boxData.x + 5 + LW / 2, y: boxData.y + 16.5,
       fill: '#fff', 'font-size': 10, 'font-family': '-apple-system,sans-serif',
       'font-weight': 600, 'text-anchor': 'middle'
     }, { pointerEvents: 'none' });
-    ltxt.textContent = b.label;
-    g.appendChild(ltxt);
+    labelText.textContent = boxData.label;
+    g.appendChild(labelText);
 
-    if (isSel) {
-      HANDLE_DIRS.forEach(hd => {
-        const hx = hd.fx(b), hy = hd.fy(b);
-        const hcirc = svgEl('circle', {
-          cx: hx, cy: hy, r: HANDLE_SIZE,
-          fill: '#fff', stroke: b.color, 'stroke-width': 2,
-          'data-role': 'resize', 'data-id': b.id, 'data-dir': hd.id
-        }, { cursor: hd.cur, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.15))' });
-        g.appendChild(hcirc);
+    if (isActive && selectedIds.length === 1) {
+      HANDLE_DIRS.forEach(handleDir => {
+        g.appendChild(svgEl('circle', {
+          cx: handleDir.fx(boxData), cy: handleDir.fy(boxData), r: HANDLE_SIZE,
+          fill: '#fff', stroke: boxData.color, 'stroke-width': 2,
+          'data-role': 'resize', 'data-id': boxData.id, 'data-dir': handleDir.id
+        }, { cursor: handleDir.cur, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.15))' }));
       });
 
-      // Delete button
-      const dx = b.x + b.w + 2, dy = b.y - 2;
-      const dcirc = svgEl('circle', {
-        cx: dx, cy: dy, r: 10,
-        fill: '#ef4444', 'data-role': 'delete', 'data-id': b.id
-      }, { cursor: 'pointer' });
+      const dx = boxData.x + boxData.w + 2;
+      const dy = boxData.y - 2;
+      g.appendChild(svgEl('circle', {
+        cx: dx, cy: dy, r: 10, fill: '#ef4444', 'data-role': 'delete', 'data-id': boxData.id
+      }, { cursor: 'pointer' }));
       const dtxt = svgEl('text', {
         x: dx, y: dy + 5, fill: '#fff',
         'font-size': 14, 'font-family': 'sans-serif', 'text-anchor': 'middle'
       }, { pointerEvents: 'none' });
       dtxt.textContent = '×';
-      g.appendChild(dcirc);
       g.appendChild(dtxt);
     }
 
     layer.appendChild(g);
   });
 
-  // Hover preview — keep it on top
   const preview = layer.querySelector('.bbox-preview');
   if (preview) layer.appendChild(preview);
 }
@@ -1105,24 +1274,22 @@ function renderAllCards() {
 
 function updateCardFocus() {
   document.querySelectorAll('#cs3 .pcard').forEach(card => card.classList.remove('bbox-card-focus'));
-  if (selectedId !== null) {
-    const b = boxes.find(b => b.id === selectedId);
-    if (b) {
-      const card = document.querySelector(`#cs3 .pcard[data-card-idx="${b.imageIndex}"]`);
-      if (card) card.classList.add('bbox-card-focus');
-    }
-  }
+  const selectedBox = getSingleSelectedBox() || (selectedId !== null ? boxes.find(box => box.id === selectedId) : null);
+  if (!selectedBox) return;
+  const card = document.querySelector(`#cs3 .pcard[data-card-idx="${selectedBox.imageIndex}"]`);
+  if (card) card.classList.add('bbox-card-focus');
 }
 
-/* ── Coordinate helper (card-relative) ── */
 function cardLayerPt(e, layerEl) {
   const r = layerEl.getBoundingClientRect();
   const src = e.touches ? e.touches[0] : e;
   return { x: src.clientX - r.left, y: src.clientY - r.top };
 }
 
+function isMultiSelectModifierPressed(e) {
+  return !!(e.shiftKey || e.metaKey);
+}
 
-/* ════ RESIZE MATH ════ */
 const HANDLE_DIRS = [
   { id:'tl', fx:(b)=>b.x,       fy:(b)=>b.y,       cur:'nwse-resize' },
   { id:'tc', fx:(b)=>b.x+b.w/2, fy:(b)=>b.y,       cur:'ns-resize'   },
@@ -1137,106 +1304,111 @@ const HANDLE_DIRS = [
 function applyResize(orig, dir, dx, dy) {
   let {x, y, w, h} = orig;
   switch (dir) {
-    case 'tl': x+=dx; y+=dy; w-=dx; h-=dy; break;
-    case 'tc':         y+=dy;        h-=dy; break;
-    case 'tr':         y+=dy; w+=dx; h-=dy; break;
-    case 'ml': x+=dx;        w-=dx;         break;
-    case 'mr':               w+=dx;         break;
-    case 'bl': x+=dx;        w-=dx; h+=dy;  break;
-    case 'bc':                      h+=dy;  break;
-    case 'br':               w+=dx; h+=dy;  break;
+    case 'tl': x += dx; y += dy; w -= dx; h -= dy; break;
+    case 'tc': y += dy; h -= dy; break;
+    case 'tr': y += dy; w += dx; h -= dy; break;
+    case 'ml': x += dx; w -= dx; break;
+    case 'mr': w += dx; break;
+    case 'bl': x += dx; w -= dx; h += dy; break;
+    case 'bc': h += dy; break;
+    case 'br': w += dx; h += dy; break;
   }
-  if (w < MIN_BOX) { if (['tl','ml','bl'].includes(dir)) x = orig.x + orig.w - MIN_BOX; w = MIN_BOX; }
-  if (h < MIN_BOX) { if (['tl','tc','tr'].includes(dir)) y = orig.y + orig.h - MIN_BOX; h = MIN_BOX; }
+  if (w < MIN_BOX) { if (['tl', 'ml', 'bl'].includes(dir)) x = orig.x + orig.w - MIN_BOX; w = MIN_BOX; }
+  if (h < MIN_BOX) { if (['tl', 'tc', 'tr'].includes(dir)) y = orig.y + orig.h - MIN_BOX; h = MIN_BOX; }
   return { x, y, w: Math.max(MIN_BOX, w), h: Math.max(MIN_BOX, h) };
 }
 
-
-/* ════ HOVER PREVIEW ════ */
 function getOrCreatePreview(layerEl, cardIdx) {
-  let pr = layerEl.querySelector('.bbox-preview');
-  if (!pr) {
-    const isSubject = cardIdx === 0;
-    const c = isSubject ? '#3b82f6' : '#f59e0b';
-    pr = svgEl('rect', {
-      rx: 5, fill: c + '14', stroke: c,
+  let preview = layerEl.querySelector('.bbox-preview');
+  if (!preview) {
+    const nextIsPrimary = !getPrimaryBox() || cardIdx === 0;
+    const color = nextIsPrimary ? PRIMARY_COLOR : ACCESSORY_COLORS[boxes.filter(box => !box.isPrimary && box.imageIndex === cardIdx).length % ACCESSORY_COLORS.length];
+    preview = svgEl('rect', {
+      rx: 5, fill: color + '14', stroke: color,
       'stroke-width': 1.8, 'stroke-dasharray': '6,4',
       class: 'bbox-preview'
     }, { pointerEvents: 'none', display: 'none' });
-    layerEl.appendChild(pr);
+    layerEl.appendChild(preview);
   }
-  return pr;
+  return preview;
 }
 
-function showPreview(layerEl, cardIdx, p) {
-  const pr = getOrCreatePreview(layerEl, cardIdx);
-  pr.setAttribute('x', p.x - DEFAULT_W / 2);
-  pr.setAttribute('y', p.y - DEFAULT_H / 2);
-  pr.setAttribute('width', DEFAULT_W);
-  pr.setAttribute('height', DEFAULT_H);
-  pr.style.display = 'block';
+function showPreview(layerEl, cardIdx, point) {
+  const preview = getOrCreatePreview(layerEl, cardIdx);
+  preview.setAttribute('x', point.x - DEFAULT_W / 2);
+  preview.setAttribute('y', point.y - DEFAULT_H / 2);
+  preview.setAttribute('width', DEFAULT_W);
+  preview.setAttribute('height', DEFAULT_H);
+  preview.style.display = 'block';
 }
 
 function hidePreview(layerEl) {
-  const pr = layerEl && layerEl.querySelector('.bbox-preview');
-  if (pr) pr.style.display = 'none';
+  const preview = layerEl && layerEl.querySelector('.bbox-preview');
+  if (preview) preview.style.display = 'none';
 }
 
-function hideAllPreviews() {
-  document.querySelectorAll('.bbox-card-layer').forEach(l => hidePreview(l));
-}
-
-
-/* ════ PLACE BOX ════ */
-function placeBoxOnCard(cardIdx, cx, cy) {
-  const isAccessory = cardIdx > 0;
-
-  // Primary: only one allowed — replace existing
-  if (!isAccessory) {
-    const existing = boxes.find(b => b.mode === 'subject' && b.imageIndex === 0);
-    if (existing) {
-      existing.x = cx - DEFAULT_W / 2;
-      existing.y = cy - DEFAULT_H / 2;
-      existing.w = DEFAULT_W;
-      existing.h = DEFAULT_H;
-      existing.aiSuggested = false;
-      selectedId = existing.id;
-      renderCardBoxes(cardIdx);
-      updateCardFocus();
-      syncSidebar3();
-      return;
-    }
+function getOrCreateSelectionBox(layerEl) {
+  let selection = layerEl.querySelector('.bbox-selection');
+  if (!selection) {
+    selection = svgEl('rect', { class: 'bbox-selection' }, { display: 'none' });
+    layerEl.appendChild(selection);
   }
+  return selection;
+}
 
-  const id = nextId++;
-  const palette = isAccessory ? ACCESSORY_COLORS : SUBJECT_COLORS;
-  const sameSlot = boxes.filter(b => b.mode === (isAccessory ? 'accessory' : 'subject') && b.imageIndex === cardIdx);
-  const color = palette[sameSlot.length % palette.length];
-  const label = isAccessory ? `Accessory ${sameSlot.length + 1}` : 'Primary';
+function showSelectionBox(layerEl, start, point) {
+  const selection = getOrCreateSelectionBox(layerEl);
+  const x = Math.min(start.x, point.x);
+  const y = Math.min(start.y, point.y);
+  const w = Math.abs(point.x - start.x);
+  const h = Math.abs(point.y - start.y);
+  selection.setAttribute('x', x);
+  selection.setAttribute('y', y);
+  selection.setAttribute('width', w);
+  selection.setAttribute('height', h);
+  selection.style.display = 'block';
+}
+
+function hideSelectionBox(layerEl) {
+  const selection = layerEl && layerEl.querySelector('.bbox-selection');
+  if (selection) selection.style.display = 'none';
+}
+
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function placeBoxOnCard(cardIdx, cx, cy) {
+  const shouldBePrimary = !getPrimaryBox() || (cardIdx === 0 && !boxes.some(box => box.isPrimary));
   boxes.push({
-    id,
-    mode: isAccessory ? 'accessory' : 'subject',
+    id: nextId++,
     imageIndex: cardIdx,
     x: cx - DEFAULT_W / 2,
     y: cy - DEFAULT_H / 2,
-    w: DEFAULT_W, h: DEFAULT_H,
-    color, label,
-    aiSuggested: false
+    w: DEFAULT_W,
+    h: DEFAULT_H,
+    aiSuggested: false,
+    label: '',
+    color: PRIMARY_COLOR,
+    isPrimary: shouldBePrimary
   });
-  selectedId = id;
-  renderCardBoxes(cardIdx);
-  updateCardFocus();
+  if (shouldBePrimary) {
+    boxes.forEach(box => {
+      if (box.id !== boxes[boxes.length - 1].id) box.isPrimary = false;
+    });
+  }
+  relabelBoxes();
+  setSingleSelection(boxes[boxes.length - 1].id);
+  renderState3Canvas();
   syncSidebar3();
 }
 
-
-/* ════ PER-CARD EVENT ATTACHMENT ════ */
 function attachCardBboxEvents(layerEl, cardIdx) {
   layerEl.addEventListener('mousedown', e => {
     if (curState !== 3) return;
-    const p = cardLayerPt(e, layerEl);
+    const point = cardLayerPt(e, layerEl);
     const role = e.target.getAttribute('data-role');
-    const id = parseInt(e.target.getAttribute('data-id'));
+    const id = parseInt(e.target.getAttribute('data-id'), 10);
 
     if (role === 'delete') {
       e.stopPropagation();
@@ -1244,38 +1416,61 @@ function attachCardBboxEvents(layerEl, cardIdx) {
       return;
     }
     if (role === 'resize') {
-      e.preventDefault(); e.stopPropagation();
-      selectedId = id;
-      const b = boxes.find(b => b.id === id);
-      drag = { mode: 'resize', id, dir: e.target.getAttribute('data-dir'), sx: p.x, sy: p.y, orig: {...b}, cardIdx, layerEl };
+      e.preventDefault();
+      e.stopPropagation();
+      setSingleSelection(id);
+      const boxData = boxes.find(box => box.id === id);
+      drag = { mode: 'resize', id, dir: e.target.getAttribute('data-dir'), sx: point.x, sy: point.y, orig: { ...boxData }, cardIdx, layerEl };
       hidePreview(layerEl);
+      hideSelectionBox(layerEl);
       renderCardBoxes(cardIdx);
       updateCardFocus();
+      syncSidebar3();
       return;
     }
     if (role === 'body') {
-      e.preventDefault(); e.stopPropagation();
-      selectedId = id;
-      const b = boxes.find(b => b.id === id);
-      drag = { mode: 'move', id, sx: p.x, sy: p.y, ox: b.x, oy: b.y, cardIdx, layerEl };
+      e.preventDefault();
+      e.stopPropagation();
+      if (isMultiSelectModifierPressed(e)) {
+        toggleBoxSelection(id);
+        renderState3Canvas();
+        syncSidebar3();
+        return;
+      }
+      setSingleSelection(id);
+      const boxData = boxes.find(box => box.id === id);
+      drag = { mode: 'move', id, sx: point.x, sy: point.y, ox: boxData.x, oy: boxData.y, cardIdx, layerEl };
       hidePreview(layerEl);
+      hideSelectionBox(layerEl);
       layerEl.style.cursor = 'grabbing';
       renderCardBoxes(cardIdx);
       updateCardFocus();
+      syncSidebar3();
       return;
     }
-    // Click on empty area → place box
     const isBg = e.target === layerEl || e.target.getAttribute('data-bg') !== null;
     if (isBg) {
       hidePreview(layerEl);
-      placeBoxOnCard(cardIdx, p.x, p.y);
+      hideSelectionBox(layerEl);
+      if (isMultiSelectModifierPressed(e)) {
+        drag = { mode: 'select', sx: point.x, sy: point.y, lastX: point.x, lastY: point.y, append: true, cardIdx, layerEl };
+        showSelectionBox(layerEl, point, point);
+        return;
+      }
+      if (selectedIds.length) {
+        clearSelection();
+        renderState3Canvas();
+        syncSidebar3();
+        return;
+      }
+      placeBoxOnCard(cardIdx, point.x, point.y);
     }
   });
 
   layerEl.addEventListener('mousemove', e => {
     if (curState !== 3 || drag) return;
     const isBg = e.target === layerEl || e.target.getAttribute('data-bg') !== null;
-    if (!selectedId && isBg) {
+    if (!selectedIds.length && isBg) {
       showPreview(layerEl, cardIdx, cardLayerPt(e, layerEl));
     } else if (!isBg) {
       hidePreview(layerEl);
@@ -1283,37 +1478,54 @@ function attachCardBboxEvents(layerEl, cardIdx) {
   });
 
   layerEl.addEventListener('mouseleave', () => {
-    if (!drag) hidePreview(layerEl);
+    if (!drag) {
+      hidePreview(layerEl);
+      hideSelectionBox(layerEl);
+    }
   });
 
   layerEl.addEventListener('click', e => {
     if (curState !== 3) return;
+    if (suppressNextCanvasClick) {
+      suppressNextCanvasClick = false;
+      return;
+    }
     const isBg = e.target === layerEl || e.target.getAttribute('data-bg') !== null;
-    if (isBg && selectedId !== null) {
-      selectedId = null;
-      renderCardBoxes(cardIdx);
-      updateCardFocus();
+    if (isBg && selectedIds.length) {
+      clearSelection();
+      renderState3Canvas();
       syncSidebar3();
     }
   });
 }
 
-/* ════ GLOBAL DRAG HANDLERS ════ */
 window.addEventListener('mousemove', e => {
   if (curState !== 3 || !drag) return;
-  const p = cardLayerPt(e, drag.layerEl);
+  const point = cardLayerPt(e, drag.layerEl);
 
-  if (drag.mode === 'move') {
-    const dx = p.x - drag.sx, dy = p.y - drag.sy;
-    const b = boxes.find(b => b.id === drag.id);
-    if (b) { b.x = drag.ox + dx; b.y = drag.oy + dy; }
+  if (drag.mode === 'select') {
+    drag.lastX = point.x;
+    drag.lastY = point.y;
+    showSelectionBox(drag.layerEl, { x: drag.sx, y: drag.sy }, point);
+  } else if (drag.mode === 'move') {
+    const dx = point.x - drag.sx;
+    const dy = point.y - drag.sy;
+    const boxData = boxes.find(box => box.id === drag.id);
+    if (boxData) {
+      boxData.x = drag.ox + dx;
+      boxData.y = drag.oy + dy;
+    }
     renderCardBoxes(drag.cardIdx);
   } else if (drag.mode === 'resize') {
-    const dx = p.x - drag.sx, dy = p.y - drag.sy;
-    const b = boxes.find(b => b.id === drag.id);
-    if (b) {
-      const r = applyResize(drag.orig, drag.dir, dx, dy);
-      b.x = r.x; b.y = r.y; b.w = r.w; b.h = r.h;
+    const dx = point.x - drag.sx;
+    const dy = point.y - drag.sy;
+    const boxData = boxes.find(box => box.id === drag.id);
+    if (boxData) {
+      const resized = applyResize(drag.orig, drag.dir, dx, dy);
+      boxData.x = resized.x;
+      boxData.y = resized.y;
+      boxData.w = resized.w;
+      boxData.h = resized.h;
     }
     renderCardBoxes(drag.cardIdx);
   }
@@ -1322,101 +1534,165 @@ window.addEventListener('mousemove', e => {
 window.addEventListener('mouseup', () => {
   if (!drag) return;
   if (curState === 3) {
-    const b = boxes.find(x => x.id === drag.id);
-    if (b) b.aiSuggested = false;
-    drag.layerEl.style.cursor = 'crosshair';
-    syncSidebar3();
+    if (drag.mode === 'select') {
+      const rect = {
+        x: Math.min(drag.sx, drag.lastX ?? drag.sx),
+        y: Math.min(drag.sy, drag.lastY ?? drag.sy),
+        w: Math.abs((drag.lastX ?? drag.sx) - drag.sx),
+        h: Math.abs((drag.lastY ?? drag.sy) - drag.sy)
+      };
+      const matches = boxes
+        .filter(box => box.imageIndex === drag.cardIdx)
+        .filter(box => rect.w < 3 && rect.h < 3 ? false : rectsOverlap(rect, box))
+        .map(box => box.id);
+      if (matches.length) {
+        const combined = drag.append ? [...selectedIds, ...matches] : matches;
+        setSelectionForImage(combined, drag.cardIdx);
+      } else if (!drag.append) {
+        clearSelection();
+      }
+      hideSelectionBox(drag.layerEl);
+      suppressNextCanvasClick = true;
+      renderState3Canvas();
+      syncSidebar3();
+    } else {
+      const boxData = boxes.find(box => box.id === drag.id);
+      if (boxData) boxData.aiSuggested = false;
+      drag.layerEl.style.cursor = 'crosshair';
+      syncSidebar3();
+    }
   }
   drag = null;
 });
 
-/* ════ KEYBOARD ════ */
 document.addEventListener('keydown', e => {
   if (curState !== 3) return;
-  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId !== null) {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.length) {
     e.preventDefault();
     eraseSelected();
   }
   if (e.key === 'Escape') {
-    selectedId = null;
+    clearSelection();
     renderAllCards();
     syncSidebar3();
   }
 });
 
-/* ════ TOOLBAR SLIDER ════ */
 const slider = document.getElementById('bboxSizeSlider');
 slider.addEventListener('input', () => {
-  if (!selectedId) return;
-  const b = boxes.find(b => b.id === selectedId);
-  if (!b) return;
-  b.aiSuggested = false;
-  const newW = parseInt(slider.value);
-  const ratio = b.h / b.w;
-  const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
-  b.w = newW;
-  b.h = Math.round(newW * ratio);
-  b.x = cx - b.w / 2;
-  b.y = cy - b.h / 2;
-  const pct = ((slider.value - 40) / (240 - 40) * 100).toFixed(1) + '%';
+  const boxData = getSingleSelectedBox();
+  if (!boxData) return;
+  boxData.aiSuggested = false;
+  const newW = parseInt(slider.value, 10);
+  const ratio = boxData.h / boxData.w;
+  const cx = boxData.x + boxData.w / 2;
+  const cy = boxData.y + boxData.h / 2;
+  boxData.w = newW;
+  boxData.h = Math.round(newW * ratio);
+  boxData.x = cx - boxData.w / 2;
+  boxData.y = cy - boxData.h / 2;
+  const pct = ((slider.value - 40) / 200 * 100).toFixed(1) + '%';
   slider.style.setProperty('--pct', pct);
-  renderCardBoxes(b.imageIndex);
+  renderCardBoxes(boxData.imageIndex);
   syncSidebar3();
+});
+
+document.getElementById('bboxMergeBtn').addEventListener('click', () => {
+  mergeSelectedBoxes();
 });
 
 function updateToolbar() {
   if (curState !== 3) return;
-  const selBox = selectedId !== null ? boxes.find(b => b.id === selectedId) : null;
-  slider.disabled = !selBox;
-  if (selBox) {
-    const v = Math.round(selBox.w);
-    slider.value = Math.min(240, Math.max(40, v));
-    const pct = ((slider.value - 40) / (240 - 40) * 100).toFixed(1) + '%';
-    slider.style.setProperty('--pct', pct);
+  const selectedBox = getSingleSelectedBox();
+  const selectedBoxes = getSelectedBoxes();
+  const mergePanel = document.getElementById('bboxMergePanel');
+  const sizePanel = document.getElementById('bboxSizePanel');
+  const mergeBtn = document.getElementById('bboxMergeBtn');
+  const canMerge = selectedBoxes.length >= 2 && selectedBoxes.every(box => box.imageIndex === selectedBoxes[0].imageIndex);
+  if (mergePanel && mergeBtn) {
+    mergePanel.style.display = canMerge ? 'flex' : 'none';
+    mergeBtn.disabled = !canMerge;
   }
+  if (sizePanel) sizePanel.style.display = selectedBox ? 'flex' : 'none';
+  slider.disabled = !selectedBox;
+  if (!selectedBox) {
+    slider.style.setProperty('--pct', '37%');
+    return;
+  }
+  slider.value = Math.min(240, Math.max(40, Math.round(selectedBox.w)));
+  const pct = ((slider.value - 40) / 200 * 100).toFixed(1) + '%';
+  slider.style.setProperty('--pct', pct);
 }
 
-
-/* ════ SIDEBAR SYNC (STATE 3) ════ */
 function syncSidebar3() {
-  const listEl = document.getElementById('ss3ImgList');
+  const listEl = document.getElementById('ss3BoxList');
   const confirmBtn = document.getElementById('bboxConfirmBtn');
-  const ok = subjectBoxesOk();
-  if (confirmBtn) confirmBtn.disabled = !ok;
+  if (confirmBtn) confirmBtn.disabled = !boxesOk();
 
   if (listEl) {
     listEl.innerHTML = '';
-    const focusIdx = selectedId !== null
-      ? (boxes.find(b => b.id === selectedId) || {}).imageIndex
-      : -1;
-
-    UPLOAD_IMAGES.forEach((src, idx) => {
+    sortBoxes(boxes).forEach(boxData => {
       const row = document.createElement('div');
-      row.className = 'ss3-img-row' + (focusIdx === idx ? ' focus' : '');
+      const isActive = boxData.id === selectedId;
+      const isSelected = isBoxSelected(boxData.id);
+      row.className = 'ss3-box-row' + (isActive ? ' focus' : '') + (!isActive && isSelected ? ' multi-focus' : '');
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
-      row.setAttribute('aria-label', idx === 0 ? 'Primary image' : 'Accessory image');
+      row.setAttribute('aria-label', `${boxData.label} on image ${boxData.imageIndex + 1}`);
 
-      const thumb = document.createElement('div');
-      thumb.className = 'ss3-thumb-sml';
-      thumb.style.backgroundImage = `url(${src})`;
-      row.appendChild(thumb);
+      const swatch = document.createElement('div');
+      swatch.className = 'ss3-box-swatch';
+      swatch.style.background = boxData.color;
+      row.appendChild(swatch);
 
-      const role = document.createElement('div');
-      role.className = 'ss3-img-role';
-      role.innerHTML = idx === 0
-        ? `Primary<span class="proto-anno proto-anno--inline">主商品</span>`
-        : `Accessory<span class="proto-anno proto-anno--inline">配件</span>`;
-      row.appendChild(role);
+      const body = document.createElement('div');
+      body.className = 'ss3-box-body';
 
-      row.addEventListener('click', () => {
-        const card = document.querySelector(`#cs3 .pcard[data-card-idx="${idx}"]`);
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const title = document.createElement('div');
+      title.className = 'ss3-box-title';
+      title.innerHTML = `${boxData.label}<span class="proto-anno proto-anno--inline">选框</span>`;
+      body.appendChild(title);
+
+      row.appendChild(body);
+
+      const actions = document.createElement('div');
+      actions.className = 'ss3-box-actions-row';
+      if (isActive && selectedIds.length === 1 && !boxData.isPrimary) {
+        const primaryBtn = document.createElement('button');
+        primaryBtn.type = 'button';
+        primaryBtn.className = 'ss3-pill-btn';
+        primaryBtn.textContent = 'Make Primary';
+        primaryBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          setPrimaryBox(boxData.id);
+        });
+        actions.appendChild(primaryBtn);
+      }
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'ss3-icon-btn';
+      deleteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+      deleteBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        removeBox(boxData.id);
       });
+      actions.appendChild(deleteBtn);
+
+      row.appendChild(actions);
+
+      const focusBox = () => {
+        setSingleSelection(boxData.id);
+        renderState3Canvas();
+        syncSidebar3();
+        const card = document.querySelector(`#cs3 .pcard[data-card-idx="${boxData.imageIndex}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+      row.addEventListener('click', focusBox);
       row.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          row.click();
+          focusBox();
         }
       });
 
@@ -1427,68 +1703,259 @@ function syncSidebar3() {
   updateToolbar();
 }
 
-/* ════ UTILITIES ════ */
-function subjectBoxesOk() {
-  return boxes.some(b => b.mode === 'subject' && b.imageIndex === 0);
+function boxesOk() {
+  return boxes.length > 0 && !!getPrimaryBox();
 }
 
-function relabelAccessories() {
-  const byIdx = {};
-  boxes.filter(b => b.mode === 'accessory').forEach(b => {
-    if (!byIdx[b.imageIndex]) byIdx[b.imageIndex] = [];
-    byIdx[b.imageIndex].push(b);
+function mergeSelectedBoxes() {
+  const selectedBoxes = getSelectedBoxes();
+  if (selectedBoxes.length < 2) return;
+  const imageIndex = selectedBoxes[0].imageIndex;
+  if (!selectedBoxes.every(box => box.imageIndex === imageIndex)) return;
+
+  const union = selectedBoxes.reduce((acc, box) => ({
+    x1: Math.min(acc.x1, box.x),
+    y1: Math.min(acc.y1, box.y),
+    x2: Math.max(acc.x2, box.x + box.w),
+    y2: Math.max(acc.y2, box.y + box.h)
+  }), {
+    x1: selectedBoxes[0].x,
+    y1: selectedBoxes[0].y,
+    x2: selectedBoxes[0].x + selectedBoxes[0].w,
+    y2: selectedBoxes[0].y + selectedBoxes[0].h
   });
-  Object.keys(byIdx).map(Number).sort((a, b) => a - b).forEach(k => {
-    byIdx[k].forEach((b, i) => { b.label = `Accessory ${i + 1}`; });
+
+  const shouldBePrimary = selectedBoxes.some(box => box.isPrimary);
+  const mergedBox = {
+    id: nextId++,
+    imageIndex,
+    x: union.x1,
+    y: union.y1,
+    w: union.x2 - union.x1,
+    h: union.y2 - union.y1,
+    aiSuggested: false,
+    label: '',
+    color: PRIMARY_COLOR,
+    isPrimary: shouldBePrimary
+  };
+
+  const mergedIds = selectedBoxes.map(box => box.id);
+  boxes = boxes.filter(box => !mergedIds.includes(box.id));
+  if (shouldBePrimary) {
+    boxes.forEach(box => { box.isPrimary = false; });
+  }
+  boxes.push(mergedBox);
+  ensurePrimaryExists();
+  relabelBoxes();
+  setSingleSelection(mergedBox.id);
+  renderState3Canvas();
+  syncSidebar3();
+
+  const card = document.querySelector(`#cs3 .pcard[data-card-idx="${imageIndex}"]`);
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function setPrimaryBox(id) {
+  let target = null;
+  boxes.forEach(box => {
+    if (box.id === id) {
+      box.isPrimary = true;
+      target = box;
+    } else {
+      box.isPrimary = false;
+    }
   });
+  if (!target) return;
+  relabelBoxes();
+  setSingleSelection(target.id);
+  renderState3Canvas();
+  syncSidebar3();
+  const card = document.querySelector(`#cs3 .pcard[data-card-idx="${target.imageIndex}"]`);
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function removeBox(id) {
-  const b = boxes.find(b => b.id === id);
-  const cardIdx = b ? b.imageIndex : null;
-  boxes = boxes.filter(b => b.id !== id);
-  if (selectedId === id) selectedId = null;
-  relabelAccessories();
-  if (cardIdx !== null) renderCardBoxes(cardIdx);
-  updateCardFocus();
+  const boxData = boxes.find(box => box.id === id);
+  const cardIdx = boxData ? boxData.imageIndex : null;
+  boxes = boxes.filter(box => box.id !== id);
+  normalizeSelection();
+  ensurePrimaryExists();
+  relabelBoxes();
+  if (cardIdx !== null && curState === 3) renderState3Canvas();
   syncSidebar3();
 }
 
 function eraseSelected() {
-  if (selectedId !== null) removeBox(selectedId);
+  if (!selectedIds.length) return;
+  const idsToRemove = [...selectedIds];
+  const cardIdx = (boxes.find(box => box.id === idsToRemove[0]) || {}).imageIndex;
+  boxes = boxes.filter(box => !idsToRemove.includes(box.id));
+  clearSelection();
+  ensurePrimaryExists();
+  relabelBoxes();
+  if (cardIdx !== undefined && curState === 3) renderState3Canvas();
+  syncSidebar3();
 }
 
 function confirmSubject() {
-  if (!subjectBoxesOk()) return;
+  if (!boxesOk()) return;
+  cutoutConfirmed = false;
+  prepareCutoutResults();
   goState(4);
 }
 
-
-/* ════════════════════ AUTO PROCESS & ADVANCED MODE ════════════════════ */
-let autoProcess = true;
-let advancedMode = false;
-let advancedAnalysisConfirmed = false;
-let advTimers = [];
-let advAccNextId = 1;
-let advAccList = [];
-
-function advAccSrc() {
-  if (UPLOAD_IMAGES.length <= 1) return UPLOAD_IMAGES[0];
-  if (advAccList.length < 1) return UPLOAD_IMAGES[0];
-  const span = UPLOAD_IMAGES.length - 1;
-  const k = ((advAccList.length - 1) % span + span) % span;
-  return UPLOAD_IMAGES[1 + k];
+function prepareCutoutResults() {
+  cutoutConfirmed = false;
+  cutoutResults = sortBoxes(boxes).map(box => ({
+    id: box.id,
+    imageIndex: box.imageIndex,
+    label: box.label,
+    color: box.color,
+    isPrimary: box.isPrimary,
+    x: box.x,
+    y: box.y,
+    w: box.w,
+    h: box.h,
+    src: UPLOAD_IMAGES[box.imageIndex]
+  }));
+  cutoutSelectedId = cutoutResults.length ? cutoutResults[0].id : null;
 }
 
-function setAdvModeFromSelect() {
-  advancedMode = document.getElementById('advModeSel').value === 'advanced';
-  if (!advancedMode) {
-    document.getElementById('advSection').classList.remove('show');
-  } else if (curState === 4) {
-    document.getElementById('advSection').classList.add('show');
-    onState4();
+function getCutoutFillStyle(result, maxDim) {
+  const scale = Math.min(maxDim / result.w, maxDim / result.h);
+  return {
+    width: `${Math.max(24, result.w * scale)}px`,
+    height: `${Math.max(24, result.h * scale)}px`,
+    backgroundImage: `url(${result.src})`,
+    backgroundSize: `${CARD_SIZE * scale}px ${CARD_SIZE * scale}px`,
+    backgroundPosition: `${-result.x * scale}px ${-result.y * scale}px`
+  };
+}
+
+function renderCutoutCanvas(targetId, interactive) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  target.innerHTML = '';
+
+  cutoutResults.forEach(result => {
+    const card = document.createElement('div');
+    card.className = 'cutout-card' + (result.id === cutoutSelectedId ? ' focus' : '');
+    card.dataset.resultId = result.id;
+
+    const stage = document.createElement('div');
+    stage.className = 'cutout-stage';
+    const crop = document.createElement('div');
+    crop.className = 'cutout-crop';
+    Object.assign(crop.style, getCutoutFillStyle(result, 154));
+    stage.appendChild(crop);
+    card.appendChild(stage);
+
+    const meta = document.createElement('div');
+    meta.className = 'cutout-meta';
+    meta.innerHTML = `<div class="cutout-title">${result.label}</div><div class="cutout-sub">${result.isPrimary ? 'Primary region' : 'Secondary region'} · Cutout preview<span class="proto-anno proto-anno--inline">抠图预览</span></div>`;
+    card.appendChild(meta);
+
+    if (interactive) {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        cutoutSelectedId = result.id;
+        renderCutoutCanvas(targetId, true);
+        syncCutoutSidebar();
+      });
+    }
+
+    target.appendChild(card);
+  });
+}
+
+function syncCutoutSidebar() {
+  const listEl = document.getElementById('ss4ResultList');
+  const confirmBtn = document.getElementById('cutoutConfirmBtn');
+  if (confirmBtn) confirmBtn.disabled = !(cutoutReady && cutoutResults.length);
+  if (!listEl) return;
+
+  listEl.innerHTML = '';
+  if (!cutoutReady) return;
+
+  cutoutResults.forEach(result => {
+    const row = document.createElement('div');
+    row.className = 'ss4-result-row' + (result.id === cutoutSelectedId ? ' focus' : '');
+    row.setAttribute('role', 'button');
+    row.setAttribute('tabindex', '0');
+
+    const thumb = document.createElement('div');
+    thumb.className = 'ss4-result-thumb';
+    const fill = document.createElement('div');
+    fill.className = 'ss4-result-fill';
+    Object.assign(fill.style, getCutoutFillStyle(result, 28));
+    thumb.appendChild(fill);
+    row.appendChild(thumb);
+
+    const body = document.createElement('div');
+    body.className = 'ss4-result-body';
+    body.innerHTML = `<div class="ss4-result-title">${result.label}</div><div class="ss4-result-meta">Image ${result.imageIndex + 1} · Preview ready</div>`;
+    row.appendChild(body);
+
+    const focusResult = () => {
+      cutoutSelectedId = result.id;
+      renderCutoutCanvas('cs4', true);
+      syncCutoutSidebar();
+      const card = document.querySelector(`#cs4 .cutout-card[data-result-id="${result.id}"]`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+    row.addEventListener('click', focusResult);
+    row.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        focusResult();
+      }
+    });
+
+    listEl.appendChild(row);
+  });
+}
+
+function startCutoutReview() {
+  if (!cutoutResults.length) {
+    ensureSeedBoxes();
+    prepareCutoutResults();
   }
-  syncState4AdvancedGate();
+  cutoutReady = !cutoutConfirmed ? false : true;
+  document.getElementById('cs4').innerHTML = '';
+  document.getElementById('ss4ResultList').innerHTML = '';
+  if (cutoutConfirmed) {
+    document.getElementById('cutoutConfirmBtn').hidden = true;
+    document.getElementById('cutoutSpin').className = '';
+    document.getElementById('cutoutSpin').innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    document.getElementById('ss4Lead').innerHTML = `Cutout previews confirmed.<span class="proto-anno proto-anno--inline">抠图预览已确认</span>`;
+    renderCutoutCanvas('cs4', true);
+    syncCutoutSidebar();
+    updateCanvasHint('Cutout previews confirmed.', '抠图预览已确认。');
+    return;
+  }
+
+  document.getElementById('cutoutConfirmBtn').hidden = false;
+  document.getElementById('cutoutConfirmBtn').disabled = true;
+  document.getElementById('cutoutSpin').className = 'spin spin-sm';
+  document.getElementById('cutoutSpin').innerHTML = '';
+  document.getElementById('ss4Lead').innerHTML = `Generating cutout previews…<span class="proto-anno proto-anno--inline">正在生成抠图预览</span>`;
+  updateCanvasHint('Generating cutout previews…', '正在生成抠图预览。');
+
+  cutoutTimer = setTimeout(() => {
+    cutoutReady = true;
+    document.getElementById('cutoutSpin').className = '';
+    document.getElementById('cutoutSpin').innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    document.getElementById('ss4Lead').innerHTML = `Review each cutout preview before continuing.<span class="proto-anno proto-anno--inline">继续前请检查每个抠图预览</span>`;
+    renderCutoutCanvas('cs4', true);
+    syncCutoutSidebar();
+    updateCanvasHint('Review the cutout previews, then confirm.', '检查抠图预览后确认。');
+  }, 1000);
+}
+
+function confirmCutoutResults() {
+  if (!cutoutReady || !cutoutResults.length) return;
+  cutoutConfirmed = true;
+  goState(4);
 }
 
 function syncAutoProcessToggle() {
@@ -1497,122 +1964,16 @@ function syncAutoProcessToggle() {
   btn.classList.toggle('on', autoProcess);
   btn.setAttribute('aria-pressed', autoProcess ? 'true' : 'false');
 }
+
 document.getElementById('autoProcessToggle').addEventListener('click', function () {
   autoProcess = !autoProcess;
   syncAutoProcessToggle();
 });
-document.getElementById('advModeSel').addEventListener('change', setAdvModeFromSelect);
-syncAutoProcessToggle();
-
-function onState4() {
-  if (!advancedMode) return;
-  advancedAnalysisConfirmed = false;
-  resetAdvSection();
-  document.getElementById('advSection').classList.add('show');
-  advTimers.forEach(clearTimeout); advTimers = [];
-
-  const primaryThumb = document.getElementById('advPrimaryThumb');
-  primaryThumb.classList.add('recognizing');
-  advTimers.push(setTimeout(() => {
-    const img = document.getElementById('advPrimaryImg');
-    img.src = UPLOAD_IMAGES[0];
-    primaryThumb.classList.remove('recognizing');
-    primaryThumb.classList.add('filled');
-    primaryThumb.classList.add('just-filled');
-    setTimeout(() => primaryThumb.classList.remove('just-filled'), 700);
-  }, 1000));
-
-  advTimers.push(setTimeout(() => {
-    const accId = advAccNextId++;
-    advAccList.push({ id: accId });
-    const thumb = createAccThumb(accId);
-    const addBtn = document.getElementById('advAccAddBtn');
-    document.getElementById('advAccRow').insertBefore(thumb, addBtn);
-    thumb.classList.add('recognizing');
-    advTimers.push(setTimeout(() => {
-      const img = thumb.querySelector('img');
-      img.src = advAccSrc();
-      thumb.classList.remove('recognizing');
-      thumb.classList.add('filled');
-    }, 1200));
-  }, 1600));
-}
-
-function syncState4AdvancedGate() {
-  const autoRow = document.getElementById('ss4AutoRow');
-  const confirmBlock = document.getElementById('advConfirmBlock');
-  const btn = document.getElementById('ss4ConfirmBtn');
-  if (!autoRow || !confirmBlock || !btn) return;
-
-  if (curState !== 4 || !advancedMode) {
-    autoRow.style.display = '';
-    confirmBlock.classList.remove('show');
-    confirmBlock.setAttribute('aria-hidden', 'true');
-    btn.hidden = false;
-    btn.disabled = false;
-    return;
-  }
-
-  autoRow.style.display = 'none';
-  confirmBlock.classList.add('show');
-  confirmBlock.setAttribute('aria-hidden', 'false');
-
-  if (!advancedAnalysisConfirmed) {
-    btn.hidden = false;
-    btn.disabled = false;
-    return;
-  }
-
-  btn.hidden = true;
-  confirmBlock.classList.remove('show');
-  confirmBlock.setAttribute('aria-hidden', 'true');
-  autoRow.style.display = '';
-}
-
-function confirmAdvancedGeneration() {
-  if (curState !== 4 || !advancedMode) return;
-  advancedAnalysisConfirmed = true;
-  syncState4AdvancedGate();
-}
-
-function createAccThumb(id) {
-  const thumb = document.createElement('div');
-  thumb.className = 'adv-acc-thumb';
-  thumb.id = `advAcc-${id}`;
-  thumb.innerHTML = `
-    <div class="adv-acc-scan-line"></div>
-    <img src="" alt="Accessory"/>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" stroke-width="1.5" class="adv-ph-icon"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-  `;
-  return thumb;
-}
-
-function advAddAcc() {
-  const id = advAccNextId++;
-  advAccList.push({ id });
-  const thumb = createAccThumb(id);
-  document.getElementById('advAccRow').insertBefore(thumb, document.getElementById('advAccAddBtn'));
-  thumb.classList.add('recognizing');
-  setTimeout(() => {
-    const img = thumb.querySelector('img');
-    img.src = advAccSrc();
-    thumb.classList.remove('recognizing');
-    thumb.classList.add('filled');
-  }, 1200);
-}
-
-function resetAdvSection() {
-  const pt = document.getElementById('advPrimaryThumb');
-  pt.classList.remove('filled', 'recognizing', 'just-filled');
-  document.getElementById('advPrimaryImg').src = '';
-  advAccList = [];
-  advAccNextId = 1;
-  document.getElementById('advAccRow').querySelectorAll('.adv-acc-thumb').forEach(el => el.remove());
-}
 
 /* ════ INIT ════ */
 syncPrimaryStageImages();
 updateSs1Lead();
+syncAutoProcessToggle();
 goState(1);
 startProcAnimation();
 </script>

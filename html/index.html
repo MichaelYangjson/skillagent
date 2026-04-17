@@ -889,8 +889,8 @@ body {
           </button>
 
           <div class="kbd-hint">
-            Click to add · drag to adjust · <kbd>Shift</kbd>/<kbd>Cmd</kbd> drag or click to multi-select · <kbd>Del</kbd> remove
-            <span class="proto-anno proto-anno--block">点击新增 · 拖拽调整 · 按住 Shift 或 Command 拖拽/点击多选 · Del 删除</span>
+            Drag to add · drag to adjust · <kbd>Shift</kbd>/<kbd>Cmd</kbd> drag or click to multi-select · <kbd>Del</kbd> remove
+            <span class="proto-anno proto-anno--block">拖拽新增 · 拖拽调整 · 按住 Shift 或 Command 拖拽/点击多选 · Del 删除</span>
           </div>
         </div>
       </div>
@@ -954,6 +954,7 @@ body {
 let curState = 0;
 let autoTimer = null;
 let cutoutTimer = null;
+let generationAutoTimer = null;
 
 const STEP_LABELS = [
   ['Removing watermarks', 'Watermark removed'],
@@ -974,6 +975,7 @@ const PRIMARY_COLOR = '#3b82f6';
 const ACCESSORY_COLORS = ['#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#10b981'];
 const HANDLE_SIZE = 7;
 const MIN_BOX = 28;
+const CREATE_DRAG_THRESHOLD = 8;
 const DEFAULT_W = 110;
 const DEFAULT_H = 110;
 const CARD_SIZE = 252;
@@ -989,12 +991,14 @@ let cutoutResults = [];
 let cutoutSelectedId = null;
 let cutoutReady = false;
 let cutoutConfirmed = false;
+let state4AutoFlow = false;
 let autoProcess = true;
 let flowConfigLocked = false;
 
 function goState(n) {
   if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
   if (cutoutTimer) { clearTimeout(cutoutTimer); cutoutTimer = null; }
+  if (generationAutoTimer) { clearTimeout(generationAutoTimer); generationAutoTimer = null; }
   curState = n;
 
   for (let i = 1; i <= 4; i++) {
@@ -1076,6 +1080,7 @@ function simulateFlow(aiSuccess) {
       goState(2);
       if (autoProcess) {
         autoTimer = setTimeout(() => {
+          state4AutoFlow = true;
           prepareCutoutResults();
           goState(4);
         }, 1800);
@@ -1488,15 +1493,23 @@ function rectsOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
-function placeBoxOnCard(cardIdx, cx, cy) {
+function createBoxFromRect(cardIdx, start, end) {
+  const x = Math.min(start.x, end.x);
+  const y = Math.min(start.y, end.y);
+  const rawW = Math.abs(end.x - start.x);
+  const rawH = Math.abs(end.y - start.y);
+  if (rawW < CREATE_DRAG_THRESHOLD || rawH < CREATE_DRAG_THRESHOLD) return false;
+
   const shouldBePrimary = !getPrimaryBox() || (cardIdx === 0 && !boxes.some(box => box.isPrimary));
+  const w = Math.max(MIN_BOX, rawW);
+  const h = Math.max(MIN_BOX, rawH);
   boxes.push({
     id: nextId++,
     imageIndex: cardIdx,
-    x: cx - DEFAULT_W / 2,
-    y: cy - DEFAULT_H / 2,
-    w: DEFAULT_W,
-    h: DEFAULT_H,
+    x,
+    y,
+    w,
+    h,
     aiSuggested: false,
     label: '',
     color: PRIMARY_COLOR,
@@ -1511,6 +1524,7 @@ function placeBoxOnCard(cardIdx, cx, cy) {
   setSingleSelection(boxes[boxes.length - 1].id);
   renderState3Canvas();
   syncSidebar3();
+  return true;
 }
 
 function attachCardBboxEvents(layerEl, cardIdx) {
@@ -1567,13 +1581,17 @@ function attachCardBboxEvents(layerEl, cardIdx) {
         showSelectionBox(layerEl, point, point);
         return;
       }
-      if (selectedIds.length) {
-        clearSelection();
-        renderState3Canvas();
-        syncSidebar3();
-        return;
-      }
-      placeBoxOnCard(cardIdx, point.x, point.y);
+      drag = {
+        mode: 'create',
+        sx: point.x,
+        sy: point.y,
+        lastX: point.x,
+        lastY: point.y,
+        cardIdx,
+        layerEl,
+        hadSelection: selectedIds.length > 0
+      };
+      showSelectionBox(layerEl, point, point);
     }
   });
 
@@ -1613,7 +1631,7 @@ window.addEventListener('mousemove', e => {
   if (curState !== 3 || !drag) return;
   const point = cardLayerPt(e, drag.layerEl);
 
-  if (drag.mode === 'select') {
+  if (drag.mode === 'select' || drag.mode === 'create') {
     drag.lastX = point.x;
     drag.lastY = point.y;
     showSelectionBox(drag.layerEl, { x: drag.sx, y: drag.sy }, point);
@@ -1665,6 +1683,21 @@ window.addEventListener('mouseup', () => {
       suppressNextCanvasClick = true;
       renderState3Canvas();
       syncSidebar3();
+    } else if (drag.mode === 'create') {
+      const created = createBoxFromRect(
+        drag.cardIdx,
+        { x: drag.sx, y: drag.sy },
+        { x: drag.lastX ?? drag.sx, y: drag.lastY ?? drag.sy }
+      );
+      hideSelectionBox(drag.layerEl);
+      suppressNextCanvasClick = true;
+      if (!created) {
+        if (drag.hadSelection) {
+          clearSelection();
+          renderState3Canvas();
+          syncSidebar3();
+        }
+      }
     } else {
       const boxData = boxes.find(box => box.id === drag.id);
       if (boxData) boxData.aiSuggested = false;
@@ -1910,6 +1943,7 @@ function eraseSelected() {
 function confirmSubject() {
   if (!boxesOk()) return;
   cutoutConfirmed = false;
+  state4AutoFlow = false;
   prepareCutoutResults();
   goState(4);
 }
@@ -2071,7 +2105,19 @@ function renderCutoutCanvas(targetId, interactive) {
 
 function returnToRegionReview() {
   cutoutConfirmed = false;
+  state4AutoFlow = false;
   goState(3);
+}
+
+function completeAutoGenerationFlow() {
+  if (curState !== 4 || !state4AutoFlow) return;
+  cutoutConfirmed = true;
+  const dot = document.getElementById('aiDot');
+  if (dot) dot.className = 'ai-dot success';
+  document.getElementById('cutoutSpin').className = '';
+  document.getElementById('cutoutSpin').innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.getElementById('ss4Lead').innerHTML = 'Cutout previews approved. Opening the next generation flow…<span class="proto-anno proto-anno--inline">抠图预览已通过，正在进入后续生图流程</span>';
+  updateCanvasHint('Cutouts approved. Opening the next generation flow…', '抠图预览已通过，正在进入后续生图流程。');
 }
 
 function syncCutoutSidebar() {
@@ -2079,7 +2125,8 @@ function syncCutoutSidebar() {
   const confirmBtn = document.getElementById('cutoutConfirmBtn');
   const adjustBtn = document.getElementById('adjustRegionsBtn');
   if (confirmBtn) confirmBtn.disabled = !(cutoutReady && cutoutResults.length);
-  if (adjustBtn) adjustBtn.hidden = false;
+  if (confirmBtn) confirmBtn.hidden = !!state4AutoFlow || !!cutoutConfirmed;
+  if (adjustBtn) adjustBtn.hidden = !!state4AutoFlow || !!cutoutConfirmed;
   if (!listEl) return;
 
   listEl.innerHTML = '';
@@ -2143,8 +2190,8 @@ function startCutoutReview() {
     return;
   }
 
-  document.getElementById('cutoutConfirmBtn').hidden = false;
-  document.getElementById('adjustRegionsBtn').hidden = false;
+  document.getElementById('cutoutConfirmBtn').hidden = state4AutoFlow;
+  document.getElementById('adjustRegionsBtn').hidden = state4AutoFlow;
   document.getElementById('cutoutConfirmBtn').disabled = true;
   document.getElementById('cutoutSpin').className = 'spin spin-sm';
   document.getElementById('cutoutSpin').innerHTML = '';
@@ -2155,10 +2202,20 @@ function startCutoutReview() {
     cutoutReady = true;
     document.getElementById('cutoutSpin').className = '';
     document.getElementById('cutoutSpin').innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#22c55e"/><path d="M4.5 8l2.5 2.5L13 5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    document.getElementById('ss4Lead').innerHTML = `Review each cutout preview before continuing.<span class="proto-anno proto-anno--inline">继续前请检查每个抠图预览</span>`;
+    document.getElementById('ss4Lead').innerHTML = state4AutoFlow
+      ? 'Cutout previews ready. Continuing to the next generation flow in 5 seconds…<span class="proto-anno proto-anno--inline">抠图预览已生成，5 秒后自动进入后续生图流程</span>'
+      : `Review each cutout preview before continuing.<span class="proto-anno proto-anno--inline">继续前请检查每个抠图预览</span>`;
     renderCutoutCanvas('cs4', true);
     syncCutoutSidebar();
-    updateCanvasHint('Review the cutout previews, then confirm.', '检查抠图预览后确认。');
+    updateCanvasHint(
+      state4AutoFlow ? 'Cutout previews ready. Auto-continuing in 5 seconds…' : 'Review the cutout previews, then confirm.',
+      state4AutoFlow ? '抠图预览已生成，5 秒后自动继续。' : '检查抠图预览后确认。'
+    );
+    if (state4AutoFlow) {
+      generationAutoTimer = setTimeout(() => {
+        completeAutoGenerationFlow();
+      }, 5000);
+    }
   }, 1000);
 }
 
